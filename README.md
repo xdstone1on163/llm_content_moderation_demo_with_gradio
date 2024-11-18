@@ -20,6 +20,13 @@
 4. **文本审核**
    - 使用大语言模型和AWS Comprehend分析文本中的敏感或不适当内容
 
+## 界面截图
+<img width="1264" alt="Screenshot 2024-11-18 at 8 32 26 AM" src="https://github.com/user-attachments/assets/60e7ee3d-42dc-4215-8ac0-e1b0bf566503">
+<img width="1254" alt="Screenshot 2024-11-18 at 8 32 36 AM" src="https://github.com/user-attachments/assets/9cdfd7ce-3558-4631-88e2-27d274ff7f8f">
+<img width="1269" alt="Screenshot 2024-11-18 at 8 32 43 AM" src="https://github.com/user-attachments/assets/61c36b61-dd38-4934-a290-82cdc45ff94b">
+<img width="1269" alt="Screenshot 2024-11-18 at 8 32 50 AM" src="https://github.com/user-attachments/assets/8227bd96-c949-4010-b828-3fdd57fffb2c">
+
+
 ## 技术栈
 
 - Python 3.8+
