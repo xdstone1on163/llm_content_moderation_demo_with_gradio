@@ -132,7 +132,7 @@ python main.py
 
 ## 联系方式
 
-[添加项目维护者的联系信息]
+[xdstone1@163.com]
 
 ---
 
