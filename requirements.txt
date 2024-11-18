@@ -1,0 +1,12 @@
+gradio==4.4.0
+boto3==1.28.62
+numpy==1.26.1
+requests==2.31.0
+python-dotenv==1.0.0
+Pillow==10.1.0
+opencv-python==4.8.1.78
+ffmpeg-python==0.2.0
+scikit-image==0.22.0
+torch==2.1.0
+torchvision==0.16.0
+transformers==4.35.2
