@@ -4,6 +4,7 @@ from video_audit import process_video
 from text_audit import process_text
 from audio_audit import create_audio_interface
 from config import DEFAULT_SYSTEM_PROMPT, DEFAULT_VIDEO_PROMPT, DEFAULT_TEXT_PROMPT
+import json
 
 with gr.Blocks() as demo:
     gr.Markdown("## 内容审核 Demo")
@@ -38,7 +39,16 @@ with gr.Blocks() as demo:
             text_prompt_input = gr.Textbox(label="文本审核提示词", value=DEFAULT_TEXT_PROMPT, lines=5)
             text_submit_button = gr.Button("审核文本")
             llm_text_output = gr.Textbox(label="大模型分析结果")
-            comprehend_output = gr.Textbox(label="AWS Comprehend 分析结果")
+            
+            # Comprehend analysis block with parent label
+            with gr.Group() as comprehend_group:
+                gr.Markdown("Comprehend的处理结果")
+                with gr.Row():
+                    sentiment_output = gr.Textbox(label="情感分析")
+                    entities_output = gr.Textbox(label="实体识别")
+                    key_phrases_output = gr.Textbox(label="关键短语")
+                    pii_entities_output = gr.Textbox(label="个人敏感信息")
+                    toxic_content_output = gr.Textbox(label="有害内容检测")
 
     submit_button.click(
         fn=process_image,
@@ -55,7 +65,10 @@ with gr.Blocks() as demo:
     text_submit_button.click(
         fn=process_text,
         inputs=[text_input, text_prompt_input],
-        outputs=[llm_text_output, comprehend_output]
+        outputs=[llm_text_output, 
+                 sentiment_output, entities_output, 
+                 key_phrases_output, pii_entities_output, 
+                 toxic_content_output]
     )
 
 demo.launch(share=True)
