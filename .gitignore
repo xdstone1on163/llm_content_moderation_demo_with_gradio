@@ -1,23 +1,55 @@
 # Python
 __pycache__/
 *.py[cod]
-*.class
+*$py.class
+*.so
 
 # Virtual Environment
 venv/
 env/
 .env
+.venv
+ENV/
 
 # AWS
 *.pem
+aws_credentials
+credentials
 
-# IDE
+# IDE and Editor files
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
 # Logs
 *.log
+logs/
 
 # Temporary files
 *.tmp
+.DS_Store
+Thumbs.db
 
+# Machine Learning and Model files
+*.pth
+*.pt
+*.model
+*.pkl
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Project specific
+config.py  # If this contains sensitive information
+*.sqlite3
+
+#others
+frpc_darwin_arm64_v0.3
+rekognition_llm_pic_audit_demo_gradio.code-workspace
