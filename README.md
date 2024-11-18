@@ -5,20 +5,20 @@
 这是一个基于AWS服务的多媒体内容审核与转录系统，提供以下核心功能：
 
 1. **图像审核**
-   - 使用Amazon Rekognition检测图像中的不适当内容
+   - 使用大语言模型和Amazon Rekognition检测图像中的不适当内容
    - 支持识别暴力、成人内容、冒犯性图像等
 
 2. **视频审核**
-   - 分析视频中的不适当内容
+   - 使用大语言模型分析视频中的不适当内容
    - 提供详细的内容风险评估
 
 3. **音频转录与毒性检测**
-   - 支持多语言音频转录
+   - 使用AWS Transcribe进行多语言音频转录
    - 对英文音频进行毒性内容检测
    - 识别潜在的有害语音内容
 
 4. **文本审核**
-   - 分析文本中的敏感或不适当内容
+   - 使用大语言模型和AWS Comprehend分析文本中的敏感或不适当内容
 
 ## 技术栈
 
@@ -67,14 +67,14 @@ sudo dnf install -y python3 python3-pip git ffmpeg
 
 ### 4. 配置Python虚拟环境
 ```bash
-python3 -m venv rekognition_env
-source rekognition_env/bin/activate
+python3 -m venv content_moderation_env
+source content_moderation_env/bin/activate
 ```
 
 ### 5. 克隆项目
 ```bash
-git clone https://github.com/your-username/rekognition_llm_pic_audit_demo_gradio.git
-cd rekognition_llm_pic_audit_demo_gradio
+git clone https://github.com/your-username/llm_content_moderation_demo_with_gradio.git
+cd llm_content_moderation_demo_with_gradio
 ```
 
 ### 6. 安装Python依赖
