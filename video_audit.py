@@ -6,6 +6,7 @@ import utils
 import config
 import json
 from aws_clients import invoke_model
+import cv2
 
 def extract_frames(video_path, num_frames):
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -100,3 +101,7 @@ def process_video(video, num_frames, prompt):
         return frames, f"成功提取 {len(frames)} 帧并完成内容分析", analysis
     except Exception as e:
         return None, f"处理视频时出错: {str(e)}", None
+
+def process_video_stream(analysis_prompt, frame_interval):
+    cap = cv2.VideoCapture(0)  # Open the default camera
+    return cap, analysis_prompt, frame_interval
