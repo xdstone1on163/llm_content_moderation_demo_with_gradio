@@ -92,20 +92,37 @@ def get_latest_logs():
     global log_content
     return log_content
 
-def analyze_frames(num_frames, analysis_prompt, capture_rate, analysis_frequency):
+def analyze_frames_continuous(num_frames, analysis_prompt, capture_rate, analysis_frequency):
     global is_analyzing, analysis_output
     while is_analyzing:
-        captured_frames = get_captured_frames()[:num_frames]
-        analysis_results = analyze_video_content(captured_frames, analysis_prompt)
-        print(analysis_results)
-        analysis_output = analysis_results
-        time.sleep(analysis_frequency)
-    return analysis_output
+        try:
+            captured_frames = get_captured_frames()[:num_frames]
+            if captured_frames:
+                analysis_results = analyze_video_content(captured_frames, analysis_prompt)
+                timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+                print(f"[{timestamp}] Analysis results:", analysis_results)
+                analysis_output = f"[{timestamp}]\n{analysis_results}\n\n" + analysis_output
+                yield analysis_output
+            time.sleep(analysis_frequency)
+        except Exception as e:
+            print(f"Error in analyze_frames_continuous: {e}")
+            time.sleep(analysis_frequency)
+
+def update_analysis_output(current_status_textbox, analysis_output):
+    current_status_textbox.value = analysis_output
 
 def start_analysis(num_frames, analysis_prompt, capture_rate, analysis_frequency):
     global analysis_thread, is_analyzing, analysis_output
     is_analyzing = True
-    analysis_thread = threading.Thread(target=analyze_frames, args=(num_frames, analysis_prompt, capture_rate, analysis_frequency))
+    analysis_output = ""
+
+    def run_analysis(current_status_textbox):
+        for result in analyze_frames_continuous(num_frames, analysis_prompt, capture_rate, analysis_frequency):
+            if not is_analyzing:
+                break
+            update_analysis_output(current_status_textbox, result)
+
+    analysis_thread = threading.Thread(target=run_analysis, args=(current_status_textbox,))
     analysis_thread.daemon = True
     analysis_thread.start()
     return gr.update(value="分析已开始"), gr.update(value="")
@@ -159,11 +176,11 @@ with gr.Blocks() as demo:
             stop_analysis_button = gr.Button("停止分析")
             stop_capture_button = gr.Button("停止截帧")
 
+            gr.Markdown("分析状态")
+            current_status_textbox = gr.Textbox(label="分析状态", lines=1, max_lines=10, autoscroll=False)
+
             gr.Markdown("已捕获的帧")
             captured_frames_gallery = gr.Gallery(label="已捕获的帧", columns=5, height="auto")
-
-            gr.Markdown("分析结果")
-            analysis_output_textbox = gr.Textbox(label="分析结果", lines=10, max_lines=10)
 
             gr.Markdown("更新已截取帧路径")
             update_path_button = gr.Button("更新已截取帧路径")
@@ -182,8 +199,12 @@ with gr.Blocks() as demo:
                 return gr.update(value="停止截帧"), gr.update(value=captured_frames)
 
             start_capture_button.click(fn=start_capture, inputs=[capture_rate_input], outputs=[captured_frames_output])
-            start_analysis_button.click(fn=start_analysis, inputs=[frames_to_analyze, analysis_prompt_input, capture_rate_input, analysis_frequency], outputs=[analysis_output_textbox, analysis_output_textbox])
-            stop_analysis_button.click(fn=stop_analysis, inputs=[], outputs=[analysis_output_textbox])
+            start_analysis_button.click(
+                fn=start_analysis,
+                inputs=[frames_to_analyze, analysis_prompt_input, capture_rate_input, analysis_frequency],
+                outputs=[current_status_textbox, captured_frames_output]
+            )
+            stop_analysis_button.click(fn=stop_analysis, inputs=[], outputs=[current_status_textbox])
             stop_capture_button.click(fn=stop_capture, inputs=[], outputs=[captured_frames_output, captured_frames_gallery])
             update_path_button.click(fn=update_captured_frame_path, inputs=[], outputs=[captured_frames_output])
 
