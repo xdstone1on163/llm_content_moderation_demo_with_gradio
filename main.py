@@ -162,7 +162,7 @@ with gr.Blocks() as demo:
             video_analysis = gr.Textbox(label="视频内容分析")
             video_submit_button = gr.Button("处理视频")
 
-        with gr.TabItem("视频流截取"):
+        with gr.TabItem("视频流审核"):
             gr.Markdown("使用摄像头捕获视频流并截取帧")
             video_stream_output = gr.Image(label="视频流")
             
