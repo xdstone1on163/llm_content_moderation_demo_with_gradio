@@ -1,20 +1,27 @@
 import gradio as gr
 from image_audit import process_image
-from video_audit import process_video
+from video_audit import process_video, analyze_video_content
 from text_audit import process_text
 from audio_audit import create_audio_interface
-from config import DEFAULT_SYSTEM_PROMPT, DEFAULT_VIDEO_PROMPT, DEFAULT_TEXT_PROMPT
+from config import DEFAULT_SYSTEM_PROMPT, DEFAULT_VIDEO_PROMPT, DEFAULT_TEXT_PROMPT, DEFAULT_VIDEO_FRAME_PROMPT
 import cv2
 import threading
 import time
 import os
 import glob
+import queue
+import shutil
 
 # Global variables for video capture
-capture_interval = 3  # Capture a frame every 3 seconds
+capture_interval = 1  # Capture a frame every 1 second
 is_running = False
+is_analyzing = False
 capture_thread = None
+analysis_thread = None
 latest_captured_frame_path = None
+log_queue = queue.Queue()
+log_content = ""
+analysis_output = ""
 
 # Ensure the directory for storing frames exists
 FRAME_STORAGE_DIR = os.path.join(os.getcwd(), 'captured_images')
@@ -23,8 +30,8 @@ os.makedirs(FRAME_STORAGE_DIR, exist_ok=True)
 def get_video_stream():
     return cv2.VideoCapture(0)
 
-def capture_frames():
-    global is_running, latest_captured_frame_path
+def capture_frames(capture_rate):
+    global is_running, latest_captured_frame_path, log_content
     cap = get_video_stream()
     frame_count = 0
     while is_running:
@@ -33,21 +40,36 @@ def capture_frames():
             break
 
         # Capture a frame every specified interval
-        if frame_count % (capture_interval * 30) == 0:  # Assuming 30fps
+        if frame_count % (capture_rate * 30) == 0:  # Assuming 30fps
             filename = os.path.join(FRAME_STORAGE_DIR, f"snapshot_{time.time()}.jpg")
             cv2.imwrite(filename, frame)
             latest_captured_frame_path = filename
-            print(f"保存了帧: {filename}")
+            log_message = f"成功截取帧: {filename}"
+            print(log_message)
+            log_content += log_message + "\n"
+            log_queue.put(log_message)
 
         frame_count += 1
         time.sleep(1/30)  # Simulate 30fps
 
     cap.release()
 
-def start_capture_thread():
+def start_capture_thread(capture_rate):
     global is_running, capture_thread
     is_running = True
-    capture_thread = threading.Thread(target=capture_frames)
+    
+    # Clear the captured frames directory
+    for filename in os.listdir(FRAME_STORAGE_DIR):
+        file_path = os.path.join(FRAME_STORAGE_DIR, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except Exception as e:
+            print(f'Failed to delete {file_path}. Reason: {e}')
+    
+    capture_thread = threading.Thread(target=capture_frames, args=(capture_rate,))
     capture_thread.daemon = True
     capture_thread.start()
 
@@ -65,6 +87,34 @@ def get_captured_frames():
     captured_frames = glob.glob(os.path.join(FRAME_STORAGE_DIR, "snapshot_*.jpg"))
     captured_frames.sort(key=os.path.getmtime, reverse=True)
     return captured_frames
+
+def get_latest_logs():
+    global log_content
+    return log_content
+
+def analyze_frames(num_frames, analysis_prompt, capture_rate):
+    global is_analyzing, analysis_output
+    is_analyzing = True
+    captured_frames = get_captured_frames()
+    analysis_results = analyze_video_content(captured_frames[:num_frames], analysis_prompt)
+    frames_analyzed = len(analysis_results)
+    analysis_iterations = 1
+    analysis_frequency_value = capture_rate * num_frames
+    
+    for result in analysis_results:
+        print(result)
+        analysis_output += f"Frames analyzed: {frames_analyzed}, Analysis iterations: {analysis_iterations}\n{result}\n"
+        frames_analyzed -= 1
+        analysis_iterations += 1
+    
+    is_analyzing = False
+    return analysis_results, analysis_frequency_value
+
+def stop_analysis():
+    global is_analyzing, analysis_thread
+    is_analyzing = False
+    if analysis_thread:
+        analysis_thread.join()
 
 with gr.Blocks() as demo:
     gr.Markdown("## 内容审核 Demo")
@@ -97,27 +147,57 @@ with gr.Blocks() as demo:
         with gr.TabItem("视频流截取"):
             gr.Markdown("使用摄像头捕获视频流并截取帧")
             video_stream_output = gr.Image(label="视频流")
-            captured_frames_output = gr.Textbox(label="已截取帧的保存路径")
+            
+            capture_rate_input = gr.Slider(minimum=1, maximum=10, step=1, value=1, label="截帧频率 (秒)")
+            frames_to_analyze = gr.Slider(minimum=1, maximum=10, step=1, value=3, label="每次分析的帧数", interactive=True)
+            analysis_prompt_input = gr.Textbox(label="分析提示词", value=DEFAULT_VIDEO_FRAME_PROMPT, lines=2)
+            analysis_frequency = gr.Slider(minimum=1, maximum=10, step=1, value=3, label="分析频率 (秒)", interactive=True)
             
             start_capture_button = gr.Button("开始截帧")
+            start_analysis_button = gr.Button("开始分析")
+            stop_analysis_button = gr.Button("停止分析")
             stop_capture_button = gr.Button("停止截帧")
-
-            gr.Markdown("更新已截取帧路径")
-            update_path_button = gr.Button("更新已截取帧路径")
 
             gr.Markdown("已捕获的帧")
             captured_frames_gallery = gr.Gallery(label="已捕获的帧", columns=5, height="auto")
 
-            def start_capture():
-                start_capture_thread()
-                return gr.update(value="开始截帧")
+            gr.Markdown("分析结果")
+            analysis_output_textbox = gr.Textbox(label="分析结果", lines=10, max_lines=10)
+
+            gr.Markdown("更新已截取帧路径")
+            update_path_button = gr.Button("更新已截取帧路径")
+            
+            captured_frames_output = gr.Textbox(label="已截取帧的保存路径")
+
+            def start_capture(capture_rate):
+                global log_content
+                log_content = "开始截帧...\n"
+                start_capture_thread(capture_rate)
+                return gr.update(value="开始截帧"), gr.update(value=log_content)
 
             def stop_capture():
                 stop_capture_thread()
                 captured_frames = get_captured_frames()
                 return gr.update(value="停止截帧"), gr.update(value=captured_frames)
 
-            start_capture_button.click(fn=start_capture, inputs=[], outputs=[captured_frames_output])
+            def start_analysis(num_frames, analysis_prompt, capture_rate, analysis_frequency):
+                global analysis_thread, analysis_output
+                analysis_thread = threading.Thread(target=analyze_frames, args=(num_frames, analysis_prompt, capture_rate))
+                analysis_thread.daemon = True
+                analysis_thread.start()
+                analysis_results, analysis_frequency_value = analyze_frames(num_frames, analysis_prompt, capture_rate)
+                return gr.update(value="\n".join(analysis_results)), gr.update(value=analysis_output), gr.update(value=str(analysis_frequency_value))
+
+            def stop_analysis():
+                global is_analyzing, analysis_thread
+                is_analyzing = False
+                if analysis_thread:
+                    analysis_thread.join()
+                return gr.update(value="分析已停止")
+
+            start_capture_button.click(fn=start_capture, inputs=[capture_rate_input], outputs=[captured_frames_output])
+            start_analysis_button.click(fn=start_analysis, inputs=[frames_to_analyze, analysis_prompt_input, capture_rate_input, analysis_frequency], outputs=[analysis_output_textbox, analysis_output_textbox, analysis_frequency])
+            stop_analysis_button.click(fn=stop_analysis, inputs=[], outputs=[analysis_output_textbox])
             stop_capture_button.click(fn=stop_capture, inputs=[], outputs=[captured_frames_output, captured_frames_gallery])
             update_path_button.click(fn=update_captured_frame_path, inputs=[], outputs=[captured_frames_output])
 

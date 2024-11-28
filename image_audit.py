@@ -2,6 +2,8 @@ import json
 from aws_clients import rekognition_client, invoke_model
 import utils
 import config
+import numpy as np
+from PIL import Image
 
 def rekognition_detect_moderation_labels_result(image):
     image_bytes = utils.get_image_bytes(image)
@@ -46,6 +48,9 @@ def process_image(image, system_prompt):
 def llm_result(image, system_prompt):
     # 使用AWS Bedrock Claude模型对图片进行审核
     model_id = config.MODEL_ID
+    
+    if isinstance(image, np.ndarray):
+        image = Image.fromarray(image)
     
     base64_image = utils.encode_image(image)
     payload = {
