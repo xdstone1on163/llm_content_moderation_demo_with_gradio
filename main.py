@@ -92,29 +92,30 @@ def get_latest_logs():
     global log_content
     return log_content
 
-def analyze_frames(num_frames, analysis_prompt, capture_rate):
+def analyze_frames(num_frames, analysis_prompt, capture_rate, analysis_frequency):
     global is_analyzing, analysis_output
+    while is_analyzing:
+        captured_frames = get_captured_frames()[:num_frames]
+        analysis_results = analyze_video_content(captured_frames, analysis_prompt)
+        print(analysis_results)
+        analysis_output = analysis_results
+        time.sleep(analysis_frequency)
+    return analysis_output
+
+def start_analysis(num_frames, analysis_prompt, capture_rate, analysis_frequency):
+    global analysis_thread, is_analyzing, analysis_output
     is_analyzing = True
-    captured_frames = get_captured_frames()
-    analysis_results = analyze_video_content(captured_frames[:num_frames], analysis_prompt)
-    frames_analyzed = len(analysis_results)
-    analysis_iterations = 1
-    analysis_frequency_value = capture_rate * num_frames
-    
-    for result in analysis_results:
-        print(result)
-        analysis_output += f"Frames analyzed: {frames_analyzed}, Analysis iterations: {analysis_iterations}\n{result}\n"
-        frames_analyzed -= 1
-        analysis_iterations += 1
-    
-    is_analyzing = False
-    return analysis_results, analysis_frequency_value
+    analysis_thread = threading.Thread(target=analyze_frames, args=(num_frames, analysis_prompt, capture_rate, analysis_frequency))
+    analysis_thread.daemon = True
+    analysis_thread.start()
+    return gr.update(value="分析已开始"), gr.update(value="")
 
 def stop_analysis():
     global is_analyzing, analysis_thread
     is_analyzing = False
     if analysis_thread:
         analysis_thread.join()
+    return gr.update(value="分析已停止")
 
 with gr.Blocks() as demo:
     gr.Markdown("## 内容审核 Demo")
@@ -151,7 +152,7 @@ with gr.Blocks() as demo:
             capture_rate_input = gr.Slider(minimum=1, maximum=10, step=1, value=1, label="截帧频率 (秒)")
             frames_to_analyze = gr.Slider(minimum=1, maximum=10, step=1, value=3, label="每次分析的帧数", interactive=True)
             analysis_prompt_input = gr.Textbox(label="分析提示词", value=DEFAULT_VIDEO_FRAME_PROMPT, lines=2)
-            analysis_frequency = gr.Slider(minimum=1, maximum=10, step=1, value=3, label="分析频率 (秒)", interactive=True)
+            analysis_frequency = gr.Slider(minimum=1, maximum=10, step=1, value=5, label="分析频率 (秒)", interactive=True)
             
             start_capture_button = gr.Button("开始截帧")
             start_analysis_button = gr.Button("开始分析")
@@ -180,23 +181,8 @@ with gr.Blocks() as demo:
                 captured_frames = get_captured_frames()
                 return gr.update(value="停止截帧"), gr.update(value=captured_frames)
 
-            def start_analysis(num_frames, analysis_prompt, capture_rate, analysis_frequency):
-                global analysis_thread, analysis_output
-                analysis_thread = threading.Thread(target=analyze_frames, args=(num_frames, analysis_prompt, capture_rate))
-                analysis_thread.daemon = True
-                analysis_thread.start()
-                analysis_results, analysis_frequency_value = analyze_frames(num_frames, analysis_prompt, capture_rate)
-                return gr.update(value="\n".join(analysis_results)), gr.update(value=analysis_output), gr.update(value=str(analysis_frequency_value))
-
-            def stop_analysis():
-                global is_analyzing, analysis_thread
-                is_analyzing = False
-                if analysis_thread:
-                    analysis_thread.join()
-                return gr.update(value="分析已停止")
-
             start_capture_button.click(fn=start_capture, inputs=[capture_rate_input], outputs=[captured_frames_output])
-            start_analysis_button.click(fn=start_analysis, inputs=[frames_to_analyze, analysis_prompt_input, capture_rate_input, analysis_frequency], outputs=[analysis_output_textbox, analysis_output_textbox, analysis_frequency])
+            start_analysis_button.click(fn=start_analysis, inputs=[frames_to_analyze, analysis_prompt_input, capture_rate_input, analysis_frequency], outputs=[analysis_output_textbox, analysis_output_textbox])
             stop_analysis_button.click(fn=stop_analysis, inputs=[], outputs=[analysis_output_textbox])
             stop_capture_button.click(fn=stop_capture, inputs=[], outputs=[captured_frames_output, captured_frames_gallery])
             update_path_button.click(fn=update_captured_frame_path, inputs=[], outputs=[captured_frames_output])
