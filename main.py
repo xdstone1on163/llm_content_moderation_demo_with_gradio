@@ -168,7 +168,7 @@ with gr.Blocks() as demo:
             
             with gr.Row():
                 capture_rate_input = gr.Slider(minimum=1, maximum=10, step=1, value=1, label="截帧频率 (秒)")
-                start_capture_button = gr.Button("开始截帧")
+            start_capture_button = gr.Button("开始截帧")
             
             frames_to_analyze = gr.Slider(minimum=1, maximum=10, step=1, value=3, label="每次分析的帧数", interactive=True)
             analysis_prompt_input = gr.Textbox(label="分析提示词", value=DEFAULT_VIDEO_FRAME_PROMPT, lines=2)
