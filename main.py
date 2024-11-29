@@ -166,12 +166,14 @@ with gr.Blocks() as demo:
             gr.Markdown("使用摄像头捕获视频流并截取帧")
             video_stream_output = gr.Image(label="视频流")
             
-            capture_rate_input = gr.Slider(minimum=1, maximum=10, step=1, value=1, label="截帧频率 (秒)")
+            with gr.Row():
+                capture_rate_input = gr.Slider(minimum=1, maximum=10, step=1, value=1, label="截帧频率 (秒)")
+                start_capture_button = gr.Button("开始截帧")
+            
             frames_to_analyze = gr.Slider(minimum=1, maximum=10, step=1, value=3, label="每次分析的帧数", interactive=True)
             analysis_prompt_input = gr.Textbox(label="分析提示词", value=DEFAULT_VIDEO_FRAME_PROMPT, lines=2)
             analysis_frequency = gr.Slider(minimum=1, maximum=10, step=1, value=5, label="分析频率 (秒)", interactive=True)
             
-            start_capture_button = gr.Button("开始截帧")
             start_analysis_button = gr.Button("开始分析")
             stop_analysis_button = gr.Button("停止分析")
             stop_capture_button = gr.Button("停止截帧")
