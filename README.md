@@ -26,10 +26,11 @@
    - 使用大语言模型和AWS Comprehend分析文本中的敏感或不适当内容
 
 ## 界面截图
-<img width="1264" alt="Screenshot 2024-11-18 at 8 32 26 AM" src="https://github.com/user-attachments/assets/60e7ee3d-42dc-4215-8ac0-e1b0bf566503">
-<img width="1254" alt="Screenshot 2024-11-18 at 8 32 36 AM" src="https://github.com/user-attachments/assets/9cdfd7ce-3558-4631-88e2-27d274ff7f8f">
-<img width="1269" alt="Screenshot 2024-11-18 at 8 32 43 AM" src="https://github.com/user-attachments/assets/61c36b61-dd38-4934-a290-82cdc45ff94b">
-<img width="1269" alt="Screenshot 2024-11-18 at 8 32 50 AM" src="https://github.com/user-attachments/assets/8227bd96-c949-4010-b828-3fdd57fffb2c">
+<img width="1210" alt="Screenshot 2024-11-29 at 5 49 52 PM" src="https://github.com/user-attachments/assets/4428b3a8-68f1-40a9-bd94-d027f4f0daf1">
+<img width="1189" alt="Screenshot 2024-11-29 at 5 49 41 PM" src="https://github.com/user-attachments/assets/d2a0373c-2fc0-40bf-9178-5275402b10e6">
+<img width="1216" alt="Screenshot 2024-11-29 at 5 49 23 PM" src="https://github.com/user-attachments/assets/61d665d9-f0ca-4d66-bb18-238dcb7ec1ac">
+<img width="1189" alt="Screenshot 2024-11-29 at 5 39 32 PM" src="https://github.com/user-attachments/assets/69f1266a-a996-43a5-a547-fbfb5a8958c4">
+<img width="1295" alt="Screenshot 2024-11-29 at 5 39 21 PM" src="https://github.com/user-attachments/assets/94afb0f5-b186-494d-8c24-f8b7463c3141">
 
 
 ## 技术栈
