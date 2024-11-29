@@ -12,19 +12,24 @@
    - 使用大语言模型分析视频中的不适当内容
    - 提供详细的内容风险评估
 
-3. **音频转录与毒性检测**
+3. **视频流审核**
+   - 使用摄像头捕获实时视频流
+   - 支持自定义截帧频率和分析频率
+   - 对截取的视频帧进行内容审核和分析
+
+4. **音频转录与毒性检测**
    - 使用AWS Transcribe进行多语言音频转录
    - 对英文音频进行毒性内容检测
    - 识别潜在的有害语音内容
 
-4. **文本审核**
+5. **文本审核**
    - 使用大语言模型和AWS Comprehend分析文本中的敏感或不适当内容
 
 ## 界面截图
-<img width="1264" alt="Screenshot 2024-11-18 at 8 32 26 AM" src="https://github.com/user-attachments/assets/60e7ee3d-42dc-4215-8ac0-e1b0bf566503">
-<img width="1254" alt="Screenshot 2024-11-18 at 8 32 36 AM" src="https://github.com/user-attachments/assets/9cdfd7ce-3558-4631-88e2-27d274ff7f8f">
-<img width="1269" alt="Screenshot 2024-11-18 at 8 32 43 AM" src="https://github.com/user-attachments/assets/61c36b61-dd38-4934-a290-82cdc45ff94b">
-<img width="1269" alt="Screenshot 2024-11-18 at 8 32 50 AM" src="https://github.com/user-attachments/assets/8227bd96-c949-4010-b828-3fdd57fffb2c">
+<img width="1264" alt="Screenshot 2024-11-18 at 8 32 26 AM" src="https://github.com/user-attachments/assets/60e7ee3d-42dc-4215-8ac0-e1b0bf566503">
+<img width="1254" alt="Screenshot 2024-11-18 at 8 32 36 AM" src="https://github.com/user-attachments/assets/9cdfd7ce-3558-4631-88e2-27d274ff7f8f">
+<img width="1269" alt="Screenshot 2024-11-18 at 8 32 43 AM" src="https://github.com/user-attachments/assets/61c36b61-dd38-4934-a290-82cdc45ff94b">
+<img width="1269" alt="Screenshot 2024-11-18 at 8 32 50 AM" src="https://github.com/user-attachments/assets/8227bd96-c949-4010-b828-3fdd57fffb2c">
 
 
 ## 技术栈
