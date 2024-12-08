@@ -26,14 +26,15 @@
    - 使用大语言模型和AWS Comprehend分析文本中的敏感或不适当内容
 
 ## 界面截图
+**图片审核界面：**
 <img width="1189" alt="Screenshot 2024-11-29 at 5 49 41 PM" src="https://github.com/user-attachments/assets/1514699b-93ba-4b80-9e66-6ca83e46a40d">
-
+**视频审核界面：**
 <img width="1210" alt="Screenshot 2024-11-29 at 5 49 52 PM" src="https://github.com/user-attachments/assets/501ad79d-3df3-44ba-869b-a402eaba1bd7">
-
+**视频流审核界面：**
 <img width="1127" alt="Screenshot 2024-12-09 at 6 08 04 AM" src="https://github.com/user-attachments/assets/764865cb-fed0-405b-b9a1-03e970705f78">
-
+**音视频转录界面：**
 <img width="1187" alt="Screenshot 2024-11-29 at 5 50 18 PM" src="https://github.com/user-attachments/assets/a0ec8297-5864-433f-84bf-9f8d61669153">
-
+**文本审核界面：**
 <img width="1212" alt="Screenshot 2024-11-29 at 5 50 26 PM" src="https://github.com/user-attachments/assets/baada4a6-960b-4d93-bbef-106e0dc6d796">
 
 ## 技术栈
