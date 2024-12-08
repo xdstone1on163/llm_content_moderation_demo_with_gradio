@@ -11,6 +11,10 @@ import os
 import glob
 import queue
 import shutil
+from video_stream import (
+    start_frame_capture, stop_frame_capture, get_latest_captured_frame_path,
+    live_logs_as_html, log_queue
+)
 
 # Global variables for video capture
 capture_interval = 1  # Capture a frame every 1 second
@@ -19,78 +23,26 @@ is_analyzing = False
 capture_thread = None
 analysis_thread = None
 latest_captured_frame_path = None
-log_queue = queue.Queue()
-log_content = ""
 analysis_output = ""
+stop_capture_flag = None  # Global flag to control frame capture
 
 # Ensure the directory for storing frames exists
 FRAME_STORAGE_DIR = os.path.join(os.getcwd(), 'captured_images')
 os.makedirs(FRAME_STORAGE_DIR, exist_ok=True)
 
-def get_video_stream():
-    return cv2.VideoCapture(0)
-
-def capture_frames(capture_rate):
-    global is_running, latest_captured_frame_path, log_content
-    cap = get_video_stream()
-    frame_count = 0
-    while is_running:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        # Capture a frame every specified interval
-        if frame_count % (capture_rate * 30) == 0:  # Assuming 30fps
-            filename = os.path.join(FRAME_STORAGE_DIR, f"snapshot_{time.time()}.jpg")
-            cv2.imwrite(filename, frame)
-            latest_captured_frame_path = filename
-            log_message = f"成功截取帧: {filename}"
-            print(log_message)
-            log_content += log_message + "\n"
-            log_queue.put(log_message)
-
-        frame_count += 1
-        time.sleep(1/30)  # Simulate 30fps
-
-    cap.release()
-
-def start_capture_thread(capture_rate):
-    global is_running, capture_thread
-    is_running = True
-    
-    # Clear the captured frames directory
-    for filename in os.listdir(FRAME_STORAGE_DIR):
-        file_path = os.path.join(FRAME_STORAGE_DIR, filename)
-        try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
-        except Exception as e:
-            print(f'Failed to delete {file_path}. Reason: {e}')
-    
-    capture_thread = threading.Thread(target=capture_frames, args=(capture_rate,))
-    capture_thread.daemon = True
-    capture_thread.start()
-
-def stop_capture_thread():
-    global is_running
-    is_running = False
-    if capture_thread:
-        capture_thread.join()
-
-def update_captured_frame_path():
-    global latest_captured_frame_path
-    return gr.update(value=latest_captured_frame_path)
-
 def get_captured_frames():
-    captured_frames = glob.glob(os.path.join(FRAME_STORAGE_DIR, "snapshot_*.jpg"))
-    captured_frames.sort(key=os.path.getmtime, reverse=True)
-    return captured_frames
-
-def get_latest_logs():
-    global log_content
-    return log_content
+    """
+    Get a list of all captured frames, sorted by timestamp (newest first)
+    """
+    frames = []
+    try:
+        # Get all jpg files in the directory
+        files = glob.glob(os.path.join(FRAME_STORAGE_DIR, "frame_*.jpg"))
+        # Sort files by modification time (newest first)
+        frames = sorted(files, key=lambda x: os.path.getmtime(x), reverse=True)
+    except Exception as e:
+        print(f"Error getting captured frames: {e}")
+    return frames
 
 def analyze_frames_continuous(num_frames, analysis_prompt, capture_rate, analysis_frequency):
     global is_analyzing, analysis_output
@@ -100,39 +52,58 @@ def analyze_frames_continuous(num_frames, analysis_prompt, capture_rate, analysi
             if captured_frames:
                 analysis_results = analyze_video_content(captured_frames, analysis_prompt)
                 timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-                print(f"[{timestamp}] Analysis results:", analysis_results)
+                log_message = f"[{timestamp}] Analysis results: {analysis_results}"
+                print(log_message)
+                log_queue.put(log_message)
                 analysis_output = f"[{timestamp}]\n{analysis_results}\n\n" + analysis_output
-                yield analysis_output
             time.sleep(analysis_frequency)
         except Exception as e:
-            print(f"Error in analyze_frames_continuous: {e}")
+            error_message = f"Error in analyze_frames_continuous: {e}"
+            print(error_message)
+            log_queue.put(error_message)
             time.sleep(analysis_frequency)
-
-def update_analysis_output(current_status_textbox, analysis_output):
-    current_status_textbox.value = analysis_output
 
 def start_analysis(num_frames, analysis_prompt, capture_rate, analysis_frequency):
     global analysis_thread, is_analyzing, analysis_output
     is_analyzing = True
     analysis_output = ""
 
-    def run_analysis(current_status_textbox):
-        for result in analyze_frames_continuous(num_frames, analysis_prompt, capture_rate, analysis_frequency):
-            if not is_analyzing:
-                break
-            update_analysis_output(current_status_textbox, result)
+    def run_analysis():
+        analyze_frames_continuous(num_frames, analysis_prompt, capture_rate, analysis_frequency)
 
-    analysis_thread = threading.Thread(target=run_analysis, args=(current_status_textbox,))
+    analysis_thread = threading.Thread(target=run_analysis)
     analysis_thread.daemon = True
     analysis_thread.start()
-    return gr.update(value="分析已开始"), gr.update(value="")
+    log_queue.put("开始分析...")
+    return gr.update(value="分析已开始")
 
 def stop_analysis():
     global is_analyzing, analysis_thread
     is_analyzing = False
     if analysis_thread:
         analysis_thread.join()
+        analysis_thread = None
+    log_queue.put("停止分析")
     return gr.update(value="分析已停止")
+
+def update_log_display():
+    logs = []
+    while not log_queue.empty():
+        try:
+            log_message = log_queue.get_nowait()
+            logs.append(log_message)
+        except queue.Empty:
+            break
+    
+    if logs:
+        log_content = "<br>".join(logs)
+        return gr.update(value=f"<div style='height:300px; overflow-y:auto; font-family:monospace; white-space:pre-wrap;'>{log_content}</div>")
+    return gr.update()
+
+def continuous_update():
+    while True:
+        time.sleep(1)  # Update every second
+        yield update_log_display()
 
 with gr.Blocks() as demo:
     gr.Markdown("## 内容审核 Demo")
@@ -168,7 +139,7 @@ with gr.Blocks() as demo:
             
             with gr.Row():
                 capture_rate_input = gr.Slider(minimum=1, maximum=10, step=1, value=1, label="截帧频率 (秒)")
-            start_capture_button = gr.Button("开始截帧")
+                start_capture_button = gr.Button("开始截帧")
             
             frames_to_analyze = gr.Slider(minimum=1, maximum=10, step=1, value=3, label="每次分析的帧数", interactive=True)
             analysis_prompt_input = gr.Textbox(label="分析提示词", value=DEFAULT_VIDEO_FRAME_PROMPT, lines=2)
@@ -179,36 +150,48 @@ with gr.Blocks() as demo:
             stop_capture_button = gr.Button("停止截帧")
 
             gr.Markdown("分析状态")
-            current_status_textbox = gr.Textbox(label="分析状态", lines=1, max_lines=10, autoscroll=False)
+            current_status_html = gr.HTML(value="<div style='height:300px; overflow-y:auto; font-family:monospace; white-space:pre-wrap;'>No logs yet...</div>")
 
             gr.Markdown("已捕获的帧")
             captured_frames_gallery = gr.Gallery(label="已捕获的帧", columns=5, height="auto")
-
-            gr.Markdown("更新已截取帧路径")
-            update_path_button = gr.Button("更新已截取帧路径")
             
             captured_frames_output = gr.Textbox(label="已截取帧的保存路径")
 
             def start_capture(capture_rate):
-                global log_content
-                log_content = "开始截帧...\n"
-                start_capture_thread(capture_rate)
-                return gr.update(value="开始截帧"), gr.update(value=log_content)
+                global stop_capture_flag, capture_thread
+                
+                # Clear the captured frames directory
+                if os.path.exists(FRAME_STORAGE_DIR):
+                    shutil.rmtree(FRAME_STORAGE_DIR)
+                os.makedirs(FRAME_STORAGE_DIR)
+                
+                log_queue.put("开始截帧...")
+                stop_capture_flag = threading.Event()
+                capture_thread = start_frame_capture(stop_capture_flag)
+                return gr.update(value="开始截帧"), gr.update(value=os.path.abspath(FRAME_STORAGE_DIR))
 
             def stop_capture():
-                stop_capture_thread()
-                captured_frames = get_captured_frames()
-                return gr.update(value="停止截帧"), gr.update(value=captured_frames)
+                global capture_thread, stop_capture_flag
+                if stop_capture_flag is not None:
+                    stop_frame_capture(capture_thread, stop_capture_flag)
+                    captured_frames = get_captured_frames()
+                    capture_thread = None
+                    stop_capture_flag = None
+                    log_queue.put("停止截帧")
+                    return gr.update(value="停止截帧"), gr.update(value=captured_frames)
+                return gr.update(value="未在截帧"), gr.update(value=[])
 
-            start_capture_button.click(fn=start_capture, inputs=[capture_rate_input], outputs=[captured_frames_output])
+            start_capture_button.click(fn=start_capture, inputs=[capture_rate_input], outputs=[start_capture_button, captured_frames_output])
             start_analysis_button.click(
                 fn=start_analysis,
                 inputs=[frames_to_analyze, analysis_prompt_input, capture_rate_input, analysis_frequency],
-                outputs=[current_status_textbox, captured_frames_output]
+                outputs=[start_analysis_button]
             )
-            stop_analysis_button.click(fn=stop_analysis, inputs=[], outputs=[current_status_textbox])
-            stop_capture_button.click(fn=stop_capture, inputs=[], outputs=[captured_frames_output, captured_frames_gallery])
-            update_path_button.click(fn=update_captured_frame_path, inputs=[], outputs=[captured_frames_output])
+            stop_analysis_button.click(fn=stop_analysis, inputs=[], outputs=[stop_analysis_button])
+            stop_capture_button.click(fn=stop_capture, inputs=[], outputs=[stop_capture_button, captured_frames_gallery])
+
+            # Continuous updates
+            demo.load(continuous_update, inputs=None, outputs=[current_status_html])
 
         with gr.TabItem("音视频转录"):
             gr.Markdown("请使用下面的组件上传音频/视频文件或录制音频。支持从视频文件中提取音频。")

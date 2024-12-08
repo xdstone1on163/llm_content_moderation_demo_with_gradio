@@ -54,3 +54,4 @@ config.py  # If this contains sensitive information
 frpc_darwin_arm64_v0.3
 rekognition_llm_pic_audit_demo_gradio.code-workspace
 captured_images/
+logging_demo.py
