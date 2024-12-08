@@ -25,6 +25,7 @@ analysis_thread = None
 latest_captured_frame_path = None
 analysis_output = ""
 stop_capture_flag = None  # Global flag to control frame capture
+log_history = []  # Store recent logs
 
 # Ensure the directory for storing frames exists
 FRAME_STORAGE_DIR = os.path.join(os.getcwd(), 'captured_images')
@@ -75,7 +76,7 @@ def start_analysis(num_frames, analysis_prompt, capture_rate, analysis_frequency
     analysis_thread.daemon = True
     analysis_thread.start()
     log_queue.put("开始分析...")
-    return gr.update(value="分析已开始")
+    return gr.update(value="分析已开始"), gr.update(value="停止分析"), gr.update(value="开始截帧"), gr.update(value="停止截帧")
 
 def stop_analysis():
     global is_analyzing, analysis_thread
@@ -84,20 +85,42 @@ def stop_analysis():
         analysis_thread.join()
         analysis_thread = None
     log_queue.put("停止分析")
-    return gr.update(value="分析已停止")
+    return gr.update(value="开始分析"), gr.update(value="分析已停止"), gr.update(value="开始截帧"), gr.update(value="停止截帧")
 
 def update_log_display():
-    logs = []
+    global log_history
+    new_logs = []
     while not log_queue.empty():
         try:
             log_message = log_queue.get_nowait()
-            logs.append(log_message)
+            new_logs.append(log_message)
         except queue.Empty:
             break
     
-    if logs:
-        log_content = "<br>".join(logs)
-        return gr.update(value=f"<div style='height:300px; overflow-y:auto; font-family:monospace; white-space:pre-wrap;'>{log_content}</div>")
+    log_history = new_logs + log_history
+    log_history = log_history[:100]  # Keep only the most recent 100 logs
+    
+    if log_history:
+        log_content = "".join([f"<div class='log-item'>{log}</div>" for log in log_history])
+        return gr.update(value=f"""
+            <div id='log-container' style='height:300px; overflow-y:auto; font-family:monospace; white-space:pre-wrap;'>
+                <style>
+                    #log-container {{
+                        display: flex;
+                        flex-direction: column;
+                    }}
+                    .log-item {{
+                        text-align: left;
+                        width: 100%;
+                    }}
+                </style>
+                {log_content}
+                <script>
+                    var logContainer = document.getElementById('log-container');
+                    logContainer.scrollTop = 0;
+                </script>
+            </div>
+        """)
     return gr.update()
 
 def continuous_update():
@@ -168,7 +191,13 @@ with gr.Blocks() as demo:
                 log_queue.put("开始截帧...")
                 stop_capture_flag = threading.Event()
                 capture_thread = start_frame_capture(stop_capture_flag)
-                return gr.update(value="开始截帧"), gr.update(value=os.path.abspath(FRAME_STORAGE_DIR))
+                return (
+                    gr.update(value="截帧已开始"),
+                    gr.update(value="开始分析"),
+                    gr.update(value="停止分析"),
+                    gr.update(value="停止截帧"),
+                    gr.update(value=os.path.abspath(FRAME_STORAGE_DIR))
+                )
 
             def stop_capture():
                 global capture_thread, stop_capture_flag
@@ -178,17 +207,41 @@ with gr.Blocks() as demo:
                     capture_thread = None
                     stop_capture_flag = None
                     log_queue.put("停止截帧")
-                    return gr.update(value="停止截帧"), gr.update(value=captured_frames)
-                return gr.update(value="未在截帧"), gr.update(value=[])
+                    return (
+                        gr.update(value="开始截帧"),
+                        gr.update(value="开始分析"),
+                        gr.update(value="停止分析"),
+                        gr.update(value="截帧已停止"),
+                        gr.update(value=captured_frames)
+                    )
+                return (
+                    gr.update(value="开始截帧"),
+                    gr.update(value="开始分析"),
+                    gr.update(value="停止分析"),
+                    gr.update(value="未在截帧"),
+                    gr.update(value=[])
+                )
 
-            start_capture_button.click(fn=start_capture, inputs=[capture_rate_input], outputs=[start_capture_button, captured_frames_output])
+            start_capture_button.click(
+                fn=start_capture,
+                inputs=[capture_rate_input],
+                outputs=[start_capture_button, start_analysis_button, stop_analysis_button, stop_capture_button, captured_frames_output]
+            )
             start_analysis_button.click(
                 fn=start_analysis,
                 inputs=[frames_to_analyze, analysis_prompt_input, capture_rate_input, analysis_frequency],
-                outputs=[start_analysis_button]
+                outputs=[start_analysis_button, stop_analysis_button, start_capture_button, stop_capture_button]
             )
-            stop_analysis_button.click(fn=stop_analysis, inputs=[], outputs=[stop_analysis_button])
-            stop_capture_button.click(fn=stop_capture, inputs=[], outputs=[stop_capture_button, captured_frames_gallery])
+            stop_analysis_button.click(
+                fn=stop_analysis,
+                inputs=[],
+                outputs=[start_analysis_button, stop_analysis_button, start_capture_button, stop_capture_button]
+            )
+            stop_capture_button.click(
+                fn=stop_capture,
+                inputs=[],
+                outputs=[start_capture_button, start_analysis_button, stop_analysis_button, stop_capture_button, captured_frames_gallery]
+            )
 
             # Continuous updates
             demo.load(continuous_update, inputs=None, outputs=[current_status_html])
