@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 # Language options
 LANGUAGE_OPTIONS = {
-    "自动检测": None,
     "中文": "zh-CN",
     "英语": "en-US",
     "日语": "ja-JP",
@@ -104,7 +103,7 @@ def upload_to_s3(file_path, bucket_name="general-demo-3"):
         logger.error(f"S3上传失败: {str(e)}")
         raise
 
-def transcribe_audio(audio_input, language_choice="自动检测"):
+def transcribe_audio(audio_input, language_choice="英文"):
     """Start transcription job for the audio file"""
     if audio_input is None:
         return "请先上传或录制音频", {}
@@ -132,12 +131,13 @@ def transcribe_audio(audio_input, language_choice="自动检测"):
         detect_toxicity = False
         language_code = None
         
-        if language_choice == "英语" or language_choice == "自动检测":
+        if language_choice == "英语":
             # For English or auto-detect, enable toxicity detection
             detect_toxicity = True
             language_code = 'en-US'
         else:
             # For other languages, disable toxicity detection
+            detect_toxicity = False
             language_code = LANGUAGE_OPTIONS.get(language_choice)
         
         logger.info(f"语言: {language_code}, 毒性检测: {detect_toxicity}")
@@ -234,9 +234,9 @@ def create_audio_interface():
                 # Language selection
                 language_choice = gr.Dropdown(
                     choices=list(LANGUAGE_OPTIONS.keys()),
-                    value="自动检测",
+                    value="英语",
                     label="选择语言",
-                    info="选择音频的语言类型，或使用自动检测"
+                    info="选择音频的语言类型"
                 )
                 
                 # Audio source selection
