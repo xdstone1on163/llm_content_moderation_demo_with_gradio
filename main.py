@@ -3,7 +3,7 @@ from image_audit import process_image
 from video_audit import process_video, analyze_video_content
 from text_audit import process_text
 from audio_audit import create_audio_interface
-from config import DEFAULT_SYSTEM_PROMPT, DEFAULT_VIDEO_PROMPT, DEFAULT_TEXT_PROMPT, DEFAULT_VIDEO_FRAME_PROMPT
+from config import DEFAULT_SYSTEM_PROMPT, DEFAULT_IMAGE_PROMPT, DEFAULT_VIDEO_PROMPT, DEFAULT_TEXT_PROMPT, DEFAULT_VIDEO_FRAME_PROMPT
 import cv2
 import threading
 import time
@@ -134,7 +134,7 @@ with gr.Blocks() as demo:
     with gr.Tabs() as tabs:
         with gr.TabItem("图片审核"):
             image_input = gr.Image(type="pil", label="上传图片", interactive=True)
-            system_prompt_input = gr.Textbox(label="LLM图片多模态分析自定义系统提示词", value=DEFAULT_SYSTEM_PROMPT, lines=5)
+            image_prompt_input = gr.Textbox(label="LLM图片多模态分析自定义提示词", value=DEFAULT_IMAGE_PROMPT, lines=5)
             llm_output = gr.Textbox(label="LLM 结果")
             
             with gr.Group() as rekognition_group:
@@ -267,7 +267,7 @@ with gr.Blocks() as demo:
 
         submit_button.click(
             fn=process_image,
-            inputs=[image_input, system_prompt_input],
+            inputs=[image_input, image_prompt_input],
             outputs=[llm_output, 
                      rekognition_moderation_output, 
                      rekognition_labels_output, 

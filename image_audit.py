@@ -4,6 +4,7 @@ import utils
 import config
 import numpy as np
 from PIL import Image
+from config import DEFAULT_SYSTEM_PROMPT, DEFAULT_IMAGE_PROMPT
 
 def rekognition_detect_moderation_labels_result(image):
     image_bytes = utils.get_image_bytes(image)
@@ -75,7 +76,7 @@ def llm_result(image, system_prompt):
                         },
                         {
                             "type": "text",
-                            "text": "这是我审查的结果："
+                            "text": DEFAULT_IMAGE_PROMPT+",here is my audit result："
                         }
                     ]
                 }
