@@ -1,11 +1,12 @@
 import subprocess
 import os
 import tempfile
+import io
 from PIL import Image
 import utils
 import config
 import json
-from aws_clients import invoke_model
+from aws_clients import invoke_model, converse_with_model
 import cv2
 import logging
 
@@ -38,72 +39,76 @@ def video_info(video_path):
     nb_frames = int(result.stdout.strip())
     return {"nb_frames": nb_frames}
 
-def analyze_video_content(frames, prompt):
-    # Prepare the content for Claude
-    content = [{"type": "text", "text": prompt}]
+def analyze_video_content(frames, prompt, model_id):
+    """使用选定的模型分析视频帧内容"""
+    
+    # Prepare the message content with frames
+    content = [{"text": prompt}]
     for i, frame in enumerate(frames):
         try:
-            base64_image = utils.encode_image(frame)
+            # Handle both PIL Image objects and frame paths
+            if isinstance(frame, str):
+                # If frame is a path, open it as PIL Image
+                with Image.open(frame) as img:
+                    img_byte_arr = io.BytesIO()
+                    img.save(img_byte_arr, format='JPEG')
+                    image_bytes = img_byte_arr.getvalue()
+            else:
+                # If frame is already a PIL Image
+                img_byte_arr = io.BytesIO()
+                frame.save(img_byte_arr, format='JPEG')
+                image_bytes = img_byte_arr.getvalue()
             content.append({
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": "image/jpeg",
-                    "data": base64_image
+                "image": {
+                    "format": "jpeg",
+                    "source": {
+                        "bytes": image_bytes
+                    }
                 }
             })
-            content.append({"type": "text", "text": f"Frame {i+1}"})
+            content.append({"text": f"Frame {i+1}"})
         except Exception as e:
             logging.error(f"Error encoding frame {i+1}: {str(e)}")
-            # Skip this frame and continue with the next one
             continue
-
-    payload = {
-        "modelId": config.MODEL_ID,
-        "contentType": "application/json",
-        "accept": "application/json",
-        "body": {
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 2000,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": content
-                }
-            ]
+    
+    # Prepare the message for conversation
+    messages = [
+        {
+            "role": "user",
+            "content": content
+        },
+        {
+            "role": "assistant",
+            "content": [{"text": "```json"}]
         }
-    }
-
-    # Convert the payload to bytes
-    body_bytes = json.dumps(payload['body']).encode('utf-8')
-
-    # Invoke the model
-    response = invoke_model(
-        body=body_bytes,
-        contentType=payload['contentType'],
-        accept=payload['accept'],
-        modelId=payload['modelId']
-    )
-
-    # Process the response
-    response_body = json.loads(response['body'].read().decode('utf-8'))
-    if 'content' in response_body and isinstance(response_body['content'], list):
-        content = response_body['content'][0]
-        if 'text' in content:
-            analysis = content['text']
-        else:
-            analysis = "视频内容分析结果不可用"
-    else:
+    ]
+    
+    # Prepare system prompts
+    system_prompts = [{"text": "You are a video content analyzer. Analyze the following video frames and provide insights."}]
+    
+    # Use the converse API
+    try:
+        analysis = converse_with_model(
+            model_id=model_id,
+            system_prompts=system_prompts,
+            messages=messages,
+            max_tokens=2000,
+            temperature=0.3,
+            top_p=0.9
+        )
+    except Exception as e:
+        logging.error(f"视频分析错误: {str(e)}")
         analysis = "视频内容分析结果不可用"
+    
     return analysis
 
-def process_video(video, num_frames, prompt):
+def process_video(video, num_frames, prompt, model_id):
     if video is None:
         return None, "请先上传视频", None
 
     try:
         frames = extract_frames(video, int(num_frames))
-        analysis = analyze_video_content(frames, prompt)
+        analysis = analyze_video_content(frames, prompt, model_id)
         return frames, f"成功提取 {len(frames)} 帧并完成内容分析", analysis
     except Exception as e:
         logging.error(f"Error processing video: {str(e)}")

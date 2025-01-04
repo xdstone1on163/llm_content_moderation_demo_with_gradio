@@ -19,6 +19,40 @@ def invoke_model(body, contentType, accept, modelId):
     )
     return response
 
+def converse_with_model(model_id, system_prompts, messages, max_tokens=2000, temperature=0.3, top_p=0.9):
+    """
+    Start or continue a conversation using Bedrock's Converse API
+    
+    Args:
+        model_id (str): The model ID to use
+        system_prompts (list): List of system prompts
+        messages (list): List of message dictionaries with role and content
+        max_tokens (int): Maximum number of tokens in response
+        temperature (float): Temperature for response generation
+        top_p (float): Top P for response generation
+    
+    Returns:
+        str: Model's response text
+    """
+    try:
+        response = bedrock_client.converse(
+            modelId=model_id,
+            system=system_prompts,
+            messages=messages,
+            inferenceConfig={
+                "temperature": temperature,
+                "maxTokens": max_tokens,
+                "topP": top_p
+            }
+        )
+        
+        result = response['output']['message']['content'][0]['text']
+        print("Using model: "+model_id)
+        return result
+    except Exception as e:
+        print(f"Model invocation error: {str(e)}")
+        return "Model invocation error"
+
 def start_transcription_job(job_name, media_file_uri, language_code=None, detect_toxicity=True):
     """
     Start an AWS Transcribe job with toxicity detection

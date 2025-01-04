@@ -1,5 +1,5 @@
 import json
-from aws_clients import comprehend_client, invoke_model
+from aws_clients import comprehend_client, invoke_model, converse_with_model
 import config
 
 def analyze_text_with_comprehend(text):
@@ -146,43 +146,46 @@ def analyze_text_with_comprehend(text):
     
     return sentiment_result, entities_result, key_phrases_result, pii_result, toxic_result
 
-def analyze_text_with_llm(text, prompt):
-    payload = {
-        "modelId": config.MODEL_ID,
-        "contentType": "application/json",
-        "accept": "application/json",
-        "body": {
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 2000,
-            "messages": [
+def analyze_text_with_llm(text, prompt, model_id):
+    """使用选定的模型分析文本内容"""
+    
+    # Prepare the message for conversation
+    messages = [
+        {
+            "role": "user",
+            "content": [
                 {
-                    "role": "user",
-                    "content": f"{prompt}\n\n文本内容：{text}"
+                    "text": f"{prompt}\n\n文本内容：{text}"
                 }
             ]
+        },
+        {
+            "role": "assistant",
+            "content": [{"text": "```json"}]
         }
-    }
-
-    response = invoke_model(
-        body=json.dumps(payload['body']).encode('utf-8'),
-        contentType=payload['contentType'],
-        accept=payload['accept'],
-        modelId=payload['modelId']
-    )
-
-    response_body = json.loads(response['body'].read().decode('utf-8'))
-    if 'content' in response_body and isinstance(response_body['content'], list):
-        content = response_body['content'][0]
-        if 'text' in content:
-            analysis = content['text']
-        else:
-            analysis = "LLM分析结果不可用"
-    else:
+    ]
+    
+    # Prepare system prompts
+    system_prompts = [{"text": "You are a text content analyzer. Analyze the following text and provide insights."}]
+    
+    # Use the converse API
+    try:
+        analysis = converse_with_model(
+            model_id=model_id,
+            system_prompts=system_prompts,
+            messages=messages,
+            max_tokens=2000,
+            temperature=0.3,
+            top_p=0.9
+        )
+    except Exception as e:
+        print(f"文本分析错误: {str(e)}")
         analysis = "LLM分析结果不可用"
+    
     return analysis
 
-def process_text(text, prompt):
-    llm_analysis = analyze_text_with_llm(text, prompt)
+def process_text(text, prompt, model_id):
+    llm_analysis = analyze_text_with_llm(text, prompt, model_id)
     
     # Unpack the Comprehend analysis results in the correct order
     sentiment, entities, key_phrases, pii_entities, toxic_content = analyze_text_with_comprehend(text)

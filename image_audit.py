@@ -1,5 +1,6 @@
 import json
-from aws_clients import rekognition_client, invoke_model
+import io
+from aws_clients import rekognition_client, invoke_model, converse_with_model
 import utils
 import config
 import numpy as np
@@ -39,70 +40,63 @@ def rekognition_detect_faces_result(image):
         result.append(f"  Top Emotion: {emotions[0]['Type']} ({emotions[0]['Confidence']:.2f}%)")
     return "Detected Faces:\n" + "\n".join(result)
 
-def process_image(image, system_prompt):
-    llm_res = llm_result(image, system_prompt)
+def process_image(image, system_prompt, model_id):
+    llm_res = llm_result(image, system_prompt, model_id)
     moderation_result = rekognition_detect_moderation_labels_result(image)
     labels_result = rekognition_detect_labels_result(image)
     faces_result = rekognition_detect_faces_result(image)
     return llm_res, moderation_result, labels_result, faces_result
 
-def llm_result(image, system_prompt):
-    # 使用AWS Bedrock Claude模型对图片进行审核
-    model_id = config.MODEL_ID
+def llm_result(image, system_prompt, model_id):
+    """使用选定的模型对图片进行审核"""
     
     if isinstance(image, np.ndarray):
         image = Image.fromarray(image)
     
-    base64_image = utils.encode_image(image)
-    payload = {
-        "modelId": model_id,
-        "contentType": "application/json",
-        "accept": "application/json",
-        "body": {
-            "anthropic_version": "bedrock-2023-05-31",
-            "system": system_prompt,
-            "max_tokens": 1000,
-            "messages": [
+    # Convert image to bytes
+    img_byte_arr = io.BytesIO()
+    image.save(img_byte_arr, format='JPEG')
+    image_bytes = img_byte_arr.getvalue()
+    
+    # Prepare messages
+    messages = [
+        {
+            "role": "user",
+            "content": [
                 {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": "image/png" if image.format and image.format.lower() == 'png' else "image/jpeg",
-                                "data": base64_image
-                            }
-                        },
-                        {
-                            "type": "text",
-                            "text": DEFAULT_IMAGE_PROMPT+",here is my audit result："
+                    "text": DEFAULT_IMAGE_PROMPT+",here is my audit result："
+                },
+                {
+                    "image": {
+                        "format": "jpeg",
+                        "source": {
+                            "bytes": image_bytes
                         }
-                    ]
+                    }
                 }
             ]
+        },
+        {
+            "role": "assistant",
+            "content": [{"text": "```json"}]
         }
-    }
-
-    # Convert the payload to bytes
-    body_bytes = json.dumps(payload['body']).encode('utf-8')
-
-    # Invoke the model
-    response = invoke_model(
-        body=body_bytes,
-        contentType=payload['contentType'],
-        accept=payload['accept'],
-        modelId=payload['modelId']
-    )
-
-    # Process the response
-    response_body = json.loads(response['body'].read().decode('utf-8'))
-    if 'content' in response_body and isinstance(response_body['content'], list):
-        content = response_body['content'][0]
-        if 'text' in content:
-            llm_analysis = content['text']
-        else:
-            llm_analysis = "LLM分析结果不可用"
-    else:
+    ]
+    
+    # Prepare system prompts
+    system_prompts = [{"text": system_prompt}] if system_prompt else None
+    
+    # Use the converse API
+    try:
+        llm_analysis = converse_with_model(
+            model_id=model_id,
+            system_prompts=system_prompts,
+            messages=messages,
+            max_tokens=2000,
+            temperature=0.3,
+            top_p=0.9
+        )
+    except Exception as e:
+        print(f"LLM分析错误: {str(e)}")
         llm_analysis = "LLM分析结果不可用"
+    
     return llm_analysis
