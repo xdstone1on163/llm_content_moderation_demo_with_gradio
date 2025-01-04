@@ -106,4 +106,4 @@ DEFAULT_VIDEO_FRAME_PROMPT = "判断视频里有没有出现人脸，并且判�
 MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
 #MODEL_ID = "us.amazon.nova-pro-v1:0"
 
-MODEL_LIST = ["anthropic.claude-3-sonnet-20240229-v2:0","anthropic.claude-3-sonnet-20240229-v1:0", "anthropic.claude-3-5-haiku-20241022-v1:0","us.amazon.nova-lite-v1:0", "us.amazon.nova-pro-v1:0"]
+MODEL_LIST = ["anthropic.claude-3-5-sonnet-20241022-v2:0","anthropic.claude-3-5-sonnet-20240620-v1:0", "anthropic.claude-3-5-haiku-20241022-v1:0","us.amazon.nova-lite-v1:0", "us.amazon.nova-pro-v1:0"]
