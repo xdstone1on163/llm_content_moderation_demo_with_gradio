@@ -42,11 +42,13 @@ def converse_with_model(model_id, system_prompts, messages, max_tokens=2000, tem
             inferenceConfig={
                 "temperature": temperature,
                 "maxTokens": max_tokens,
-                "topP": top_p
+                "topP": top_p,
+                "stopSequences": ["```"], # stop sequences here
             }
         )
         
         result = response['output']['message']['content'][0]['text']
+        result = result.rstrip("`")
         print("Using model: "+model_id)
         return result
     except Exception as e:
