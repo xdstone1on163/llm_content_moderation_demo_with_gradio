@@ -108,3 +108,36 @@ MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
 #MODEL_ID = "us.amazon.nova-pro-v1:0"
 
 MODEL_LIST = ["anthropic.claude-3-5-sonnet-20241022-v2:0","anthropic.claude-3-5-sonnet-20240620-v1:0", "anthropic.claude-3-5-haiku-20241022-v1:0","us.amazon.nova-micro-v1:0", "us.amazon.nova-lite-v1:0", "us.amazon.nova-pro-v1:0"]
+MODEL_PRICES = [
+    {
+        "模型": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        "输入每百万token价格": 3.00,
+        "输出每百万token价格": 15.00
+    },
+    {
+        "模型": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+        "输入每百万token价格": 3.00,
+        "输出每百万token价格": 15.00
+    },
+    {
+        "模型": "anthropic.claude-3-5-haiku-20241022-v1:0",
+        "输入每百万token价格": 1.00,
+        "输出每百万token价格": 5.00
+    },
+    {
+        "模型": "us.amazon.nova-micro-v1:0",
+        "输入每百万token价格": 0.04,
+        "输出每百万token价格": 0.14
+    },
+    {
+        "模型": "us.amazon.nova-lite-v1:0",
+        "输入每百万token价格": 0.06,
+        "输出每百万token价格": 0.24
+    },
+    {
+        "模型": "us.amazon.nova-pro-v1:0",
+        "输入每百万token价格": 0.80,
+        "输出每百万token价格": 3.20
+    }
+]
+

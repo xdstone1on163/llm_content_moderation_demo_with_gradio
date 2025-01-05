@@ -3,7 +3,7 @@ from image_audit import process_image
 from video_audit import process_video, analyze_video_content
 from text_audit import process_text
 from audio_audit import create_audio_interface
-from config import DEFAULT_SYSTEM_PROMPT, DEFAULT_IMAGE_PROMPT, DEFAULT_VIDEO_PROMPT, DEFAULT_TEXT_PROMPT, DEFAULT_VIDEO_FRAME_PROMPT, DEFAULT_TEXT_TO_AUDIT, MODEL_LIST
+from config import DEFAULT_SYSTEM_PROMPT, DEFAULT_IMAGE_PROMPT, DEFAULT_VIDEO_PROMPT, DEFAULT_TEXT_PROMPT, DEFAULT_VIDEO_FRAME_PROMPT, DEFAULT_TEXT_TO_AUDIT, MODEL_LIST, MODEL_PRICES
 import cv2
 import threading
 import time
@@ -149,9 +149,23 @@ with gr.Blocks() as demo:
     gr.Markdown("## 内容审核 Demo")
     
     with gr.Row():
-        # Left column for model selection
+        # Left column for model selection and price display
         with gr.Column(scale=1):
-            model_dropdown = gr.Dropdown(choices=MODEL_LIST, label="选择模型", value=MODEL_LIST[0])
+            with gr.Group():
+                gr.Markdown("选择模型")
+                model_dropdown = gr.Dropdown(choices=MODEL_LIST, value="anthropic.claude-3-5-sonnet-20241022-v2:0")
+
+            with gr.Group():
+                gr.Markdown("模型价格")
+                model_price_display = gr.Textbox(value="", interactive=False)
+
+                def update_model_price(model):
+                    for price_info in MODEL_PRICES:
+                        if price_info["模型"] == model:
+                            return f"输入每百万token价格: ${price_info['输入每百万token价格']:.2f}\n输出每百万token价格: ${price_info['输出每百万token价格']:.2f}"
+                    return "价格信息不可用"
+
+                model_dropdown.change(fn=update_model_price, inputs=[model_dropdown], outputs=[model_price_display])
         
         # Vertical line separator
         gr.HTML("""
