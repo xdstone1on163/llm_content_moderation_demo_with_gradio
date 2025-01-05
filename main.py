@@ -323,7 +323,7 @@ with gr.Blocks() as demo:
 
                 # Text audit tab
                 with gr.TabItem("文本审核"):
-                    text_input = gr.Textbox(label="输入待审核文本", value=DEFAULT_TEXT_TO_AUDIT，lines=5)
+                    text_input = gr.Textbox(label="输入待审核文本", value=DEFAULT_TEXT_TO_AUDIT, lines=5)
                     text_prompt_input = gr.Textbox(label="文本审核提示词", value=DEFAULT_TEXT_PROMPT, lines=5)
                     text_submit_button = gr.Button("审核文本")
                     llm_text_output = gr.Textbox(label="大模型分析结果")
