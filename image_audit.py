@@ -1,5 +1,7 @@
 import json
 import io
+import os
+import cv2
 from aws_clients import rekognition_client, invoke_model, converse_with_model
 import utils
 import config
@@ -49,44 +51,52 @@ def process_image(image, system_prompt, model_id):
 
 def llm_result(image, system_prompt, model_id):
     """使用选定的模型对图片进行审核"""
-    
-    if isinstance(image, np.ndarray):
-        image = Image.fromarray(image)
-    
-    # Convert image to bytes
-    img_byte_arr = io.BytesIO()
-    image.save(img_byte_arr, format='JPEG')
-    image_bytes = img_byte_arr.getvalue()
-    
-    # Prepare messages
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {
-                    "text": DEFAULT_IMAGE_PROMPT+",here is my audit result："
-                },
-                {
-                    "image": {
-                        "format": "jpeg",
-                        "source": {
-                            "bytes": image_bytes
+    try:
+        # Use the same image handling logic as utils.py
+        if isinstance(image, str):
+            # If image is a file path
+            if os.path.isfile(image):
+                with Image.open(image) as img:
+                    image = img.copy()
+            else:
+                raise ValueError(f"File not found: {image}")
+        elif isinstance(image, np.ndarray):
+            # Convert NumPy array to PIL Image
+            image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        elif not isinstance(image, Image.Image):
+            raise ValueError("Unsupported image type. Expected PIL Image, NumPy array, or file path.")
+        
+        # Convert image to bytes
+        image_bytes = utils.get_image_bytes(image)
+        
+        # Prepare messages
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "text": DEFAULT_IMAGE_PROMPT+",here is my audit result："
+                    },
+                    {
+                        "image": {
+                            "format": "jpeg",
+                            "source": {
+                                "bytes": image_bytes
+                            }
                         }
                     }
-                }
-            ]
-        },
-        {
-            "role": "assistant",
-            "content": [{"text": "```json"}]
-        }
-    ]
-    
-    # Prepare system prompts
-    system_prompts = [{"text": system_prompt}] if system_prompt else None
-    
-    # Use the converse API
-    try:
+                ]
+            },
+            {
+                "role": "assistant",
+                "content": [{"text": "```json"}]
+            }
+        ]
+        
+        # Prepare system prompts
+        system_prompts = [{"text": system_prompt}] if system_prompt else None
+        
+        # Use the converse API
         llm_analysis = converse_with_model(
             model_id=model_id,
             system_prompts=system_prompts,
@@ -95,8 +105,8 @@ def llm_result(image, system_prompt, model_id):
             temperature=0.3,
             top_p=0.9
         )
+        return llm_analysis
+        
     except Exception as e:
         print(f"LLM分析错误: {str(e)}")
-        llm_analysis = "LLM分析结果不可用"
-    
-    return llm_analysis
+        return "LLM分析结果不可用"

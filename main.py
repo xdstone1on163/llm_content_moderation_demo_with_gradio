@@ -138,6 +138,13 @@ def continuous_update():
         time.sleep(1)  # Update every second
         yield update_log_display()
 
+def get_example_files(directory):
+    """Get list of files from examples directory"""
+    example_dir = os.path.join('examples', directory)
+    if os.path.exists(example_dir):
+        return sorted([os.path.join(example_dir, f) for f in os.listdir(example_dir) if not f.startswith('.')])
+    return []
+
 with gr.Blocks() as demo:
     gr.Markdown("## 内容审核 Demo")
     
@@ -154,8 +161,34 @@ with gr.Blocks() as demo:
         # Main content area
         with gr.Column(scale=4):
             with gr.Tabs() as tabs:
+                # Image audit tab
                 with gr.TabItem("图片审核"):
-                    image_input = gr.Image(type="pil", label="上传图片", interactive=True)
+                    gr.Markdown("### 示例图片")
+                    example_images = get_example_files('pics')
+                    with gr.Row():
+                        example_gallery = gr.Gallery(
+                            value=example_images,
+                            label="点击选择示例图片",
+                            columns=3,
+                            height=200,
+                            interactive=True
+                        )
+                    
+                    image_input = gr.Image(label="上传图片", type="pil", interactive=True, sources=["upload", "webcam"])
+
+                    def load_example_image(evt: gr.SelectData, gallery):
+                        try:
+                            selected_path = example_images[evt.index]
+                            if os.path.isfile(selected_path):
+                                return Image.open(selected_path)
+                            else:
+                                print(f"File not found: {selected_path}")
+                                return None
+                        except Exception as e:
+                            print(f"Error loading image: {e}")
+                            return None
+
+                    example_gallery.select(load_example_image, example_gallery, image_input)
                     image_prompt_input = gr.Textbox(label="LLM图片多模态分析自定义提示词", value=DEFAULT_IMAGE_PROMPT, lines=5)
                     llm_output = gr.Textbox(label="LLM 结果")
                     
@@ -168,9 +201,35 @@ with gr.Blocks() as demo:
                     
                     submit_button = gr.Button("分析图片")
 
+                # Video frame audit tab
                 with gr.TabItem("视频切帧审核"):
+                    gr.Markdown("### 示例视频")
+                    example_videos = get_example_files('videos')
+                    with gr.Row():
+                        example_gallery_videos = gr.Gallery(
+                            value=example_videos,
+                            label="点击选择示例视频",
+                            columns=3,
+                            height=200,
+                            interactive=True
+                        )
+                    
                     gr.Markdown("请使用下面的视频组件上传视频文件或录制视频。上传的视频不要超过200MB。")
                     video_input = gr.Video(label="上传或录制视频")
+
+                    def load_example_video(evt: gr.SelectData, gallery):
+                        try:
+                            selected_path = example_videos[evt.index]
+                            if os.path.isfile(selected_path):
+                                return selected_path
+                            else:
+                                print(f"File not found: {selected_path}")
+                                return None
+                        except Exception as e:
+                            print(f"Error loading video: {e}")
+                            return None
+
+                    example_gallery_videos.select(load_example_video, example_gallery_videos, video_input)
                     num_frames_input = gr.Slider(minimum=1, maximum=20, step=1, value=5, label="抽取帧数")
                     video_prompt_input = gr.Textbox(label="视频内容审核提示词", value=DEFAULT_VIDEO_PROMPT, lines=5)
                     video_output = gr.Gallery(label="抽取的视频帧", columns=20, height="auto")
@@ -178,6 +237,7 @@ with gr.Blocks() as demo:
                     video_analysis = gr.Textbox(label="视频内容分析")
                     video_submit_button = gr.Button("处理视频")
 
+                # Video stream audit tab
                 with gr.TabItem("视频流审核"):
                     gr.Markdown("使用摄像头捕获视频流并截取帧")
                     video_stream_output = gr.Image(label="视频流")
@@ -199,13 +259,69 @@ with gr.Blocks() as demo:
 
                     gr.Markdown("已捕获的帧")
                     captured_frames_gallery = gr.Gallery(label="已捕获的帧", columns=5, height="auto")
-                    
                     captured_frames_output = gr.Textbox(label="已截取帧的保存路径")
 
+                # Audio transcription tab
                 with gr.TabItem("音视频转录"):
-                    gr.Markdown("请使用下面的组件上传音频/视频文件或录制音频。支持从视频文件中提取音频。")
-                    audio_components = create_audio_interface()
+                    gr.Markdown("请使用下面的组件上传音频/视频文件、录制音频或选择样例音频。支持从视频文件中提取音频。")
+                    
+                    # Get example audio files
+                    example_audios = [f for f in get_example_files('audios') if f.endswith('.mp3') or f.endswith('.mp4') or f.endswith('.wav')]
+                    
+                    # Create the audio interface
+                    audio_interface = create_audio_interface(example_audios)
+                    
+                    # Function to handle example audio selection
+                    def load_example_audio(audio_name):
+                        selected_path = next((f for f in example_audios if os.path.basename(f) == audio_name), None)
+                        if selected_path and os.path.isfile(selected_path):
+                            return (
+                                gr.update(value="样例音频"),  # audio source radio
+                                gr.update(value=audio_name),  # example audio dropdown
+                                gr.update(value=selected_path)  # audio preview (upload_player)
+                            )
+                        else:
+                            print(f"File not found: {audio_name}")
+                            return gr.update(), gr.update(), gr.update()
 
+                    # Find the components we need
+                    upload_player = audio_interface.children[0].children[0].children[3]  # audio preview
+                    audio_source = None
+                    example_audio_dropdown = None
+                    for child in audio_interface.children[2].children[0].children:
+                        if isinstance(child, gr.Radio) and child.label == "选择音频来源":
+                            audio_source = child
+                        elif isinstance(child, gr.Dropdown) and child.label == "选择样例音频":
+                            example_audio_dropdown = child
+
+                    if audio_source and example_audio_dropdown:
+                        # Function to handle audio source selection
+                        def update_example_audio_visibility(audio_source_value):
+                            return gr.update(visible=(audio_source_value == "样例音频"))
+
+                        audio_source.change(
+                            fn=update_example_audio_visibility,
+                            inputs=[audio_source],
+                            outputs=[example_audio_dropdown]
+                        )
+
+                        # Function to handle example audio selection
+                        def load_example_audio(example_name):
+                            if not example_name:
+                                return gr.update()
+                            selected_path = next((f for f in example_audios if os.path.basename(f) == example_name), None)
+                            if selected_path and os.path.isfile(selected_path):
+                                return gr.update(value=selected_path), gr.update(value="样例音频")
+                            return gr.update(), gr.update()
+
+                        # Connect example audio selection to update the player
+                        example_audio_dropdown.change(
+                            fn=load_example_audio,
+                            inputs=[example_audio_dropdown],
+                            outputs=[upload_player, audio_source]
+                        )
+
+                # Text audit tab
                 with gr.TabItem("文本审核"):
                     text_input = gr.Textbox(label="输入待审核文本", lines=5)
                     text_prompt_input = gr.Textbox(label="文本审核提示词", value=DEFAULT_TEXT_PROMPT, lines=5)
@@ -287,10 +403,16 @@ with gr.Blocks() as demo:
             # Continuous updates
             demo.load(continuous_update, inputs=None, outputs=[current_status_html])
 
+            def process_image_wrapper(image, prompt, model):
+                # Process the image and get results
+                llm_res, moderation_result, labels_result, faces_result = process_image(image, prompt, model)
+                # Return the original image along with results
+                return image, llm_res, moderation_result, labels_result, faces_result
+
             submit_button.click(
-                fn=process_image,
+                fn=process_image_wrapper,
                 inputs=[image_input, image_prompt_input, model_dropdown],
-                outputs=[llm_output, 
+                outputs=[image_input, llm_output, 
                          rekognition_moderation_output, 
                          rekognition_labels_output, 
                          rekognition_faces_output]

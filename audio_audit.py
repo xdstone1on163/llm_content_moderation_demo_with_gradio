@@ -194,7 +194,7 @@ def transcribe_audio(audio_input, language_choice="英文"):
 
 # Rest of the code remains the same as in the previous implementation
 # (Gradio interface creation code is unchanged)
-def create_audio_interface():
+def create_audio_interface(example_audios):
     """Create the audio interface components"""
     with gr.Blocks() as audio_audit:
         with gr.Row():
@@ -208,9 +208,10 @@ def create_audio_interface():
                 upload_button = gr.Button("处理上传的文件")
                 upload_status = gr.Textbox(label="上传状态", interactive=False)
                 upload_player = gr.Audio(
-                    label="上传文件处理结果",
+                    label="音频预览",
                     type="filepath",
-                    interactive=False
+                    interactive=True,
+                    autoplay=False
                 )
 
             # Recording column
@@ -241,9 +242,16 @@ def create_audio_interface():
                 
                 # Audio source selection
                 audio_source = gr.Radio(
-                    choices=["上传的文件", "录制的音频"],
+                    choices=["上传的文件", "录制的音频", "样例里的音频"],
                     label="选择音频来源",
                     value="上传的文件"
+                )
+                
+                # Example audio selection (initially hidden)
+                example_audio_dropdown = gr.Dropdown(
+                    choices=[os.path.basename(path) for path in example_audios],
+                    label="选择样例音频",
+                    visible=False
                 )
                 
                 # Transcribe button
@@ -276,12 +284,25 @@ def create_audio_interface():
             outputs=[record_status]
         )
         
-        # Transcribe function that handles both sources
-        def transcribe_selected_audio(audio_source, upload_player, recorder, language_choice):
+        # Show/hide example audio dropdown based on audio source selection
+        def update_example_audio_visibility(audio_source):
+            return gr.update(visible=(audio_source == "样例里的音频"))
+        
+        audio_source.change(
+            fn=update_example_audio_visibility,
+            inputs=[audio_source],
+            outputs=[example_audio_dropdown]
+        )
+        
+        # Transcribe function that handles all sources
+        def transcribe_selected_audio(audio_source, upload_player, recorder, example_audio, language_choice):
             if audio_source == "上传的文件":
                 return transcribe_audio(upload_player, language_choice)
-            else:
+            elif audio_source == "录制的音频":
                 return transcribe_audio(recorder, language_choice)
+            else:  # 样例里的音频
+                example_path = next((path for path in example_audios if os.path.basename(path) == example_audio), None)
+                return transcribe_audio(example_path, language_choice) if example_path else ("样例音频未找到", {})
         
         # Transcribe button
         transcribe_button.click(
@@ -290,6 +311,7 @@ def create_audio_interface():
                 audio_source,
                 upload_player,
                 recorder,
+                example_audio_dropdown,
                 language_choice
             ],
             outputs=[
@@ -300,5 +322,4 @@ def create_audio_interface():
 
     return audio_audit
 
-# Create the audio interface
-audio_interface = create_audio_interface()
+# The audio interface will be created in main.py
