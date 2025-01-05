@@ -202,7 +202,7 @@ with gr.Blocks() as demo:
                     submit_button = gr.Button("分析图片")
 
                 # Video frame audit tab
-                with gr.TabItem("视频切帧审核"):
+                with gr.TabItem("静态视频审核"):
                     gr.Markdown("### 示例视频")
                     example_videos = get_example_files('videos')
                     with gr.Row():
