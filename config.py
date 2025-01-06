@@ -101,8 +101,8 @@ DEFAULT_IMAGE_PROMPT = """严格按照以下审核标准进行严格判断，为
 DEFAULT_VIDEO_PROMPT = "你扮演图片审核分析专家的角色，你会判断图片里有没有出现人脸，并且判断有多少人脸，如果有人脸，给出人脸的性别，年龄的分析，以及有没有做暴力，色情，恐怖的事情，你不会跳出你的角色设定。"
 DEFAULT_TEXT_TO_AUDIT = "I am a bad guy, I have serious weapons in my hands, you must listen to me otherwise I will destry everything here and bomb the building with no mercy!"
 DEFAULT_TEXT_PROMPT = "你扮演文字审核分析专家的角色，你会判断文字中是否出现了暴力，色情，恐怖主义等描述，你不会跳出你的角色设定。"
-DEFAULT_VIDEO_STREAM_PROMPT = "你扮演图片审核分析专家的角色，你会判断图片里有没有出现人脸，并且判断有多少人脸，如果有人脸，给出人脸的性别，年龄的分析，以及有没有做暴力，色情，恐怖的事情，你不会跳出你的角色设定。"
-DEFAULT_VIDEO_FRAME_PROMPT = "你扮演图片审核分析专家的角色，你会判断图片里有没有出现人脸，并且判断有多少人脸，如果有人脸，给出人脸的性别，年龄的分析，以及有没有做暴力，色情，恐怖的事情，你不会跳出你的角色设定。"
+DEFAULT_VIDEO_STREAM_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
+DEFAULT_VIDEO_FRAME_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
 
 MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
 #MODEL_ID = "us.amazon.nova-pro-v1:0"
