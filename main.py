@@ -302,7 +302,7 @@ with gr.Blocks() as demo:
                     example_audios = [f for f in get_example_files('audios') if f.endswith('.mp3') or f.endswith('.mp4') or f.endswith('.wav')]
                     
                     # Create the audio interface
-                    audio_interface = create_audio_interface(example_audios)
+                    audio_interface = create_audio_interface(example_audios,model_dropdown)
                     
                     # Function to handle example audio selection
                     def load_example_audio(audio_name):
