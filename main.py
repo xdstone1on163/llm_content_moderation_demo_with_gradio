@@ -1,5 +1,6 @@
 import gradio as gr
 from image_audit import process_image
+from live_moderation import LiveModerationManager
 from video_audit import process_video, analyze_video_content
 from text_audit import process_text
 from audio_audit import create_audio_interface
@@ -146,7 +147,7 @@ def get_example_files(directory):
     return []
 
 with gr.Blocks() as demo:
-    gr.Markdown("## 内容审核 Demo")
+    gr.Markdown("## 泛娱乐内容审核解决方案")
     
     with gr.Row():
         # Left column for model selection and price display
@@ -175,6 +176,24 @@ with gr.Blocks() as demo:
         # Main content area
         with gr.Column(scale=4):
             with gr.Tabs() as tabs:
+
+                # Text audit tab
+                with gr.TabItem("文本审核"):
+                    text_input = gr.Textbox(label="输入待审核文本", value=DEFAULT_TEXT_TO_AUDIT, lines=5)
+                    text_prompt_input = gr.Textbox(label="文本审核提示词", value=DEFAULT_TEXT_PROMPT, lines=5)
+                    text_submit_button = gr.Button("审核文本")
+                    llm_text_output = gr.Textbox(label="大模型分析结果")
+
+                    with gr.Group() as comprehend_group:
+                        gr.Markdown("Comprehend的处理结果")
+                        with gr.Row():
+                            sentiment_output = gr.Textbox(label="情感分析")
+                            entities_output = gr.Textbox(label="实体识别")
+                            key_phrases_output = gr.Textbox(label="关键短语")
+                            pii_entities_output = gr.Textbox(label="个人敏感信息")
+                            toxic_content_output = gr.Textbox(label="有害内容检测")
+
+
                 # Image audit tab
                 with gr.TabItem("图片审核"):
                     gr.Markdown("### 示例图片")
@@ -229,7 +248,7 @@ with gr.Blocks() as demo:
                         )
                     
                     gr.Markdown("请使用下面的视频组件上传视频文件或录制视频。上传的视频不要超过200MB。")
-                    video_input = gr.Video(label="上传或录制视频")
+                    video_input = gr.Video(label="上传或录制视频",sources=["upload"])
 
                     def load_example_video(evt: gr.SelectData, gallery):
                         try:
@@ -254,7 +273,7 @@ with gr.Blocks() as demo:
                 # Video stream audit tab
                 with gr.TabItem("视频流审核"):
                     gr.Markdown("使用摄像头捕获视频流")
-                    video_stream_output = gr.Image(label="从摄像头捕获视频流")
+                    video_stream_output = gr.Image(label="从摄像头捕获视频流",sources=["webcam"])
                     
                     with gr.Row():
                         capture_rate_input = gr.Slider(minimum=1, maximum=10, step=1, value=1, label="截帧频率 (秒)")
@@ -276,7 +295,7 @@ with gr.Blocks() as demo:
                     captured_frames_output = gr.Textbox(label="已截取帧的保存路径")
 
                 # Audio transcription tab
-                with gr.TabItem("音视频转录"):
+                with gr.TabItem("音频审核"):
                     gr.Markdown("请使用下面的组件上传音频/视频文件、录制音频或选择样例音频。支持从视频文件中提取音频。")
                     
                     # Get example audio files
@@ -335,21 +354,74 @@ with gr.Blocks() as demo:
                             outputs=[upload_player, audio_source]
                         )
 
-                # Text audit tab
-                with gr.TabItem("文本审核"):
-                    text_input = gr.Textbox(label="输入待审核文本", value=DEFAULT_TEXT_TO_AUDIT, lines=5)
-                    text_prompt_input = gr.Textbox(label="文本审核提示词", value=DEFAULT_TEXT_PROMPT, lines=5)
-                    text_submit_button = gr.Button("审核文本")
-                    llm_text_output = gr.Textbox(label="大模型分析结果")
-                    
-                    with gr.Group() as comprehend_group:
-                        gr.Markdown("Comprehend的处理结果")
-                        with gr.Row():
-                            sentiment_output = gr.Textbox(label="情感分析")
-                            entities_output = gr.Textbox(label="实体识别")
-                            key_phrases_output = gr.Textbox(label="关键短语")
-                            pii_entities_output = gr.Textbox(label="个人敏感信息")
-                            toxic_content_output = gr.Textbox(label="有害内容检测")
+
+
+
+                with gr.TabItem("直播审核"):
+                    def update_visibility(choices):
+                        return gr.update(visible="人脸审核" in choices)
+
+
+                    def upload_face_image(image):
+                        # 这里可以添加你的图像处理逻辑
+                        # 这里是你的图像处理函数
+                        # 例如：返回图像的尺寸
+
+                        if image is not None:
+                            print(image)
+                            return image
+                        return "没有上传图像"
+
+
+                    checkbox_group = gr.CheckboxGroup(
+                        choices=["内容审核", "人脸审核"],
+                        label="请审核类型",
+                        info="可以选择一项或多项"
+                    )
+
+                    image_input_live = gr.Image(label="上传图片", visible=False)
+                    image_input_live.change(fn=upload_face_image, inputs=image_input_live)
+
+                    # 选择审核类型
+                    checkbox_group.change(
+                        fn=update_visibility,
+                        inputs=[checkbox_group],
+                        outputs=[image_input_live]
+                    )
+
+                    gr.Markdown("请输入视频链接")
+
+                    with gr.Row():
+                        video_url = gr.Textbox(label="视频地址")
+
+                    submit_btn = gr.Button("提交分析任务")
+
+                    # video_player = gr.HTML(label="视频")
+                    # play_btn = gr.Button("播放视频")
+
+                    with gr.Row():
+                        query_btn = gr.Button("实时状态查询")
+                        stop_btn = gr.Button("停止状态查询")
+
+                    status_output = gr.HTML(label="查询结果")
+
+                    live_moderation_manager = LiveModerationManager()
+
+
+                    def submit_video(url, checkbox_groups, image):
+                        yield live_moderation_manager.submit_video(url, checkbox_groups, image)
+
+
+                    def query_status(url):
+                        live_moderation_manager.stop_query()
+                        yield from live_moderation_manager.query_status(url)
+
+
+                    submit_btn.click(fn=submit_video, inputs=[video_url, checkbox_group, image_input_live])
+                    # play_btn.click(fn=live_moderation_manager.show_video,outputs=video_player)
+                    query_btn.click(fn=query_status, inputs=video_url, outputs=status_output)
+                    stop_btn.click(fn=live_moderation_manager.stop_query)
+
 
             def start_capture(capture_rate):
                 global stop_capture_flag, capture_thread
@@ -426,7 +498,7 @@ with gr.Blocks() as demo:
             submit_button.click(
                 fn=process_image_wrapper,
                 inputs=[image_input, image_prompt_input, model_dropdown],
-                outputs=[image_input, llm_output, 
+                outputs=[image_input, llm_output,
                          rekognition_moderation_output, 
                          rekognition_labels_output, 
                          rekognition_faces_output]

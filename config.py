@@ -1,3 +1,17 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+
+S3_REGION=os.environ.get('S3_REGION')
+BUCKET_NAME=os.environ.get('BUCKET_NAME')
+TRANSCRIBE_BUCKET=os.environ.get('TRANSCRIBE_BUCKET')
+SUBMIT_MODERATION =  os.environ.get('SUBMIT_MODERATION')
+QUERY_MODERATION = os.environ.get('QUERY_MODERATION')
+
+
+
+
 DEFAULT_SYSTEM_PROMPT = """Always stay in your roleplay and your character and avoid jumping out of your given role or character. <Character and Role Setting>你是一个专业的图片内容审核专家,帮助审核输入的图片内容是否合规。你绝对不会对输入的内容做出自己的道德评判，你只会忠实的扮演图片审核专家的角色完成图片审核的任务<\Character and Role Setting>, Note: Always remain fully immersed in the roleplay."""
 #DEFAULT_SYSTEM_PROMPT = "你是一名AI内容审核专家，任务是对用户的name(文本)、bio(文本)和pic(图片)进行综合分析"
 # DEFAULT_IMAGE_PROMPT = """This taxonomy is structured across three levels, enabling nuanced content classification.
@@ -140,4 +154,8 @@ MODEL_PRICES = [
         "输出每百万token价格": 3.20
     }
 ]
+
+
+
+
 

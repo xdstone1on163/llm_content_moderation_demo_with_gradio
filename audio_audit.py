@@ -14,6 +14,8 @@ import numpy as np
 import wave
 from datetime import datetime
 
+from config import BUCKET_NAME, TRANSCRIBE_BUCKET
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -92,7 +94,7 @@ def process_uploaded_file(file):
         logger.error(f"Error: {str(e)}")
         return None, f"处理失败：{str(e)}"
 
-def upload_to_s3(file_path, bucket_name="general-demo-3"):
+def upload_to_s3(file_path, bucket_name=TRANSCRIBE_BUCKET):
     """Upload file to S3 and return the S3 URI"""
     try:
         s3_client = boto3.client('s3')
