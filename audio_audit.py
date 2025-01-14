@@ -33,18 +33,30 @@ def save_recorded_audio(audio_data):
         
     sample_rate, audio_array = audio_data
     
-    # Create a temporary WAV file
+    # 确保数据类型正确
+    if not isinstance(audio_array, np.ndarray):
+        logger.error("音频数据格式错误")
+        return None
+        
+    # 添加数据范围检查
+    if np.max(np.abs(audio_array)) > 1.0:
+        logger.warning("音频数据超出范围，进行归一化")
+        audio_array = audio_array / np.max(np.abs(audio_array))
+    
+    # 在转换前添加调试信息
+    logger.debug(f"Audio array stats: min={np.min(audio_array)}, max={np.max(audio_array)}, dtype={audio_array.dtype}")
+    logger.debug(f"Sample rate: {sample_rate}")
+    
     temp_path = os.path.join(tempfile.gettempdir(), f"recorded_audio_{uuid.uuid4()}.wav")
     
     try:
         with wave.open(temp_path, 'wb') as wav_file:
-            # Configure WAV file parameters
-            wav_file.setnchannels(1)  # Mono
-            wav_file.setsampwidth(2)  # 16-bit
-            wav_file.setframerate(sample_rate)
+            wav_file.setnchannels(1)
+            wav_file.setsampwidth(2)
+            wav_file.setframerate(int(sample_rate))  # 确保采样率为整数
             
-            # Convert float32 to int16
-            audio_array_int = (audio_array * 32767).astype(np.int16)
+            # 更稳健的转换方式
+            audio_array_int = np.clip(audio_array * 32767, -32768, 32767).astype(np.int16)
             wav_file.writeframes(audio_array_int.tobytes())
             
         logger.info(f"录音已保存到: {temp_path}")
