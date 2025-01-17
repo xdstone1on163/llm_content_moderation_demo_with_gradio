@@ -254,7 +254,7 @@ with gr.Blocks() as demo:
                 # Video stream audit tab
                 with gr.TabItem("视频流审核"):
                     gr.Markdown("使用摄像头捕获视频流")
-                    video_stream_output = gr.Image(label="从摄像头捕获视频流")
+                    video_stream_output = gr.Image(label="从摄像头捕获视频流",sources=["webcam"])
                     
                     with gr.Row():
                         capture_rate_input = gr.Slider(minimum=1, maximum=10, step=1, value=1, label="截帧频率 (秒)")
