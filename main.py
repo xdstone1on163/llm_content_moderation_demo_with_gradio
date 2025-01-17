@@ -166,6 +166,10 @@ with gr.Blocks() as demo:
                     return "价格信息不可用"
 
                 model_dropdown.change(fn=update_model_price, inputs=[model_dropdown], outputs=[model_price_display])
+                
+                # Set initial price for the default model
+                default_model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+                demo.load(fn=lambda: update_model_price(default_model), inputs=None, outputs=[model_price_display])
         
         # Vertical line separator
         gr.HTML("""
