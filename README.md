@@ -59,27 +59,22 @@
 pip install gradio boto3 numpy requests
 ```
 
-## 部署步骤（AWS Linux 2023 EC2）
+## 在macOS上部署项目
 
-### 1. 准备EC2实例
-1. 选择Amazon Linux 2023 AMI
-2. 实例类型建议：
-   - 最小：t2.medium
-   - 推荐：t3.large
-3. 配置安全组，开放：
-   - SSH (22端口)
-   - HTTP (80端口)
-   - HTTPS (443端口)
-
-### 2. 连接到EC2实例
+### 1. 安装Homebrew（如果尚未安装）
 ```bash
-ssh -i your-key.pem ec2-user@your-instance-ip
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-### 3. 系统更新与基础软件安装
+### 2. 安装系统依赖
 ```bash
-sudo dnf update -y
-sudo dnf install -y python3 python3-pip git ffmpeg
+brew install python ffmpeg git
+```
+
+### 3. 克隆项目
+```bash
+git clone https://github.com/your-username/llm_content_moderation_demo_with_gradio.git
+cd llm_content_moderation_demo_with_gradio
 ```
 
 ### 4. 配置Python虚拟环境
@@ -88,18 +83,12 @@ python3 -m venv content_moderation_env
 source content_moderation_env/bin/activate
 ```
 
-### 5. 克隆项目
-```bash
-git clone https://github.com/your-username/llm_content_moderation_demo_with_gradio.git
-cd llm_content_moderation_demo_with_gradio
-```
-
-### 6. 安装Python依赖
+### 5. 安装Python依赖
 ```bash
 pip install -r requirements.txt
 ```
 
-### 7. AWS凭证配置
+### 6. AWS凭证配置
 ```bash
 aws configure
 # 输入您的AWS Access Key ID
@@ -108,7 +97,7 @@ aws configure
 # 默认输出格式：json
 ```
 
-### 8. 运行应用
+### 7. 运行应用
 ```bash
 python main.py
 ```
