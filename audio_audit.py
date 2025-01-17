@@ -13,6 +13,7 @@ import uuid
 import numpy as np
 import wave
 from datetime import datetime
+from config import S3_BUCKET_NAME
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -104,13 +105,13 @@ def process_uploaded_file(file):
         logger.error(f"Error: {str(e)}")
         return None, f"处理失败：{str(e)}"
 
-def upload_to_s3(file_path, bucket_name="general-demo-3"):
+def upload_to_s3(file_path):
     """Upload file to S3 and return the S3 URI"""
     try:
         s3_client = boto3.client('s3')
         file_name = f"audio/{uuid.uuid4()}.wav"
-        s3_client.upload_file(file_path, bucket_name, file_name)
-        return f"s3://{bucket_name}/{file_name}"
+        s3_client.upload_file(file_path, S3_BUCKET_NAME, file_name)
+        return f"s3://{S3_BUCKET_NAME}/{file_name}"
     except Exception as e:
         logger.error(f"S3上传失败: {str(e)}")
         raise
