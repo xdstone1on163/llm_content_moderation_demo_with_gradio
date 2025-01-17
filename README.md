@@ -73,7 +73,7 @@ brew install python ffmpeg git
 
 ### 3. 克隆项目
 ```bash
-git clone https://github.com/your-username/llm_content_moderation_demo_with_gradio.git
+git clone https://github.com/xdstone1on163/llm_content_moderation_demo_with_gradio.git
 cd llm_content_moderation_demo_with_gradio
 ```
 
