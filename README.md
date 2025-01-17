@@ -102,6 +102,41 @@ aws configure
 python main.py
 ```
 
+## 配置文件说明
+
+### config.py
+config.py文件包含项目的主要配置参数，包括：
+- 模型提示词（Prompts）
+- 模型列表和价格配置
+- S3存储桶名称
+- 其他系统默认参数
+
+示例：
+```python
+# S3 bucket configuration
+S3_BUCKET_NAME = "your-bucket-name"
+
+# Model configurations
+MODEL_LIST = ["model1", "model2"]
+```
+
+### .env文件
+项目支持使用.env文件来配置敏感信息和环境变量。创建.env文件在项目根目录：
+```bash
+# AWS Credentials
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_DEFAULT_REGION=us-west-2
+
+# S3 Configuration (可选，会覆盖config.py中的设置)
+S3_BUCKET_NAME=your-bucket-name
+```
+
+注意：
+- .env文件包含敏感信息，已在.gitignore中配置忽略，不会被提交到版本控制系统
+- 环境变量的值会覆盖config.py中的默认设置
+- 建议在本地开发时使用.env文件，在生产环境使用系统环境变量
+
 ## AWS服务配置
 
 ### 必要的IAM权限
