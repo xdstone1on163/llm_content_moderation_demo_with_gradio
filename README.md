@@ -54,11 +54,6 @@
 - ffmpeg
 - git
 
-### Python依赖包
-```bash
-pip install gradio boto3 numpy requests
-```
-
 ## 在macOS上部署项目
 
 ### 1. 安装Homebrew（如果尚未安装）
@@ -68,7 +63,7 @@ pip install gradio boto3 numpy requests
 
 ### 2. 安装系统依赖
 ```bash
-brew install python ffmpeg git
+brew install python@3.11 ffmpeg git
 ```
 
 ### 3. 克隆项目
@@ -77,10 +72,10 @@ git clone https://github.com/xdstone1on163/llm_content_moderation_demo_with_grad
 cd llm_content_moderation_demo_with_gradio
 ```
 
-### 4. 配置Python虚拟环境
+### 4. 配置Conda虚拟环境（https://docs.anaconda.com/miniconda/install/）
 ```bash
-python3 -m venv content_moderation_env
-source content_moderation_env/bin/activate
+conda create -n myenv python=3.11
+conda activate myenv
 ```
 
 ### 5. 安装Python依赖
