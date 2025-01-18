@@ -131,6 +131,7 @@ S3_BUCKET_NAME=your-bucket-name
 - .env文件包含敏感信息，已在.gitignore中配置忽略，不会被提交到版本控制系统
 - 环境变量的值会覆盖config.py中的默认设置
 - 建议在本地开发时使用.env文件，在生产环境使用系统环境变量
+- 另外确保在你使用的AWS区域已经通过Bedrock服务开通了Claude/Nova等相关模型的权限
 
 ## AWS服务配置
 
