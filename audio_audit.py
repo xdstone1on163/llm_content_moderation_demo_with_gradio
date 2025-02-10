@@ -21,10 +21,10 @@ logger = logging.getLogger(__name__)
 
 # Language options
 LANGUAGE_OPTIONS = {
-    "中文": "zh-CN",
-    "英语": "en-US",
-    "日语": "ja-JP",
-    "韩语": "ko-KR"
+    "Chinese": "zh-CN",
+    "English": "en-US",
+    "Japanese": "ja-JP",
+    "Korean": "ko-KR"
 }
 
 def save_recorded_audio(audio_data):
@@ -34,17 +34,17 @@ def save_recorded_audio(audio_data):
         
     sample_rate, audio_array = audio_data
     
-    # 确保数据类型正确
+    # Ensure correct data type
     if not isinstance(audio_array, np.ndarray):
-        logger.error("音频数据格式错误")
+        logger.error("Invalid audio data format")
         return None
         
-    # 添加数据范围检查
+    # Add data range check
     if np.max(np.abs(audio_array)) > 1.0:
-        logger.warning("音频数据超出范围，进行归一化")
+        logger.warning("Audio data out of range, normalizing")
         audio_array = audio_array / np.max(np.abs(audio_array))
     
-    # 在转换前添加调试信息
+    # Add debug information before conversion
     logger.debug(f"Audio array stats: min={np.min(audio_array)}, max={np.max(audio_array)}, dtype={audio_array.dtype}")
     logger.debug(f"Sample rate: {sample_rate}")
     
@@ -54,25 +54,25 @@ def save_recorded_audio(audio_data):
         with wave.open(temp_path, 'wb') as wav_file:
             wav_file.setnchannels(1)
             wav_file.setsampwidth(2)
-            wav_file.setframerate(int(sample_rate))  # 确保采样率为整数
+            wav_file.setframerate(int(sample_rate))  # Ensure sample rate is an integer
             
-            # 更稳健的转换方式
+            # More robust conversion method
             audio_array_int = np.clip(audio_array * 32767, -32768, 32767).astype(np.int16)
             wav_file.writeframes(audio_array_int.tobytes())
             
-        logger.info(f"录音已保存到: {temp_path}")
+        logger.info(f"Recording saved to: {temp_path}")
         return temp_path
     except Exception as e:
-        logger.error(f"保存录音失败: {str(e)}")
+        logger.error(f"Failed to save recording: {str(e)}")
         return None
 
 def process_uploaded_file(file):
     """Process uploaded audio or video file and extract audio"""
     if file is None:
-        return None, "请选择文件"
+        return None, "Please select a file"
     
     try:
-        logger.info(f"处理上传的文件: {file.name}")
+        logger.info(f"Processing uploaded file: {file.name}")
         
         # Create output file
         output_path = os.path.join(tempfile.gettempdir(), "processed_audio.wav")
@@ -94,16 +94,16 @@ def process_uploaded_file(file):
         result.check_returncode()
         
         if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-            return output_path, "处理成功"
+            return output_path, "Processing successful"
         else:
-            return None, "处理失败：输出文件无效"
+            return None, "Processing failed: Invalid output file"
             
     except subprocess.CalledProcessError as e:
         logger.error(f"FFmpeg error: {e.stderr}")
-        return None, f"处理失败：{e.stderr}"
+        return None, f"Processing failed: {e.stderr}"
     except Exception as e:
         logger.error(f"Error: {str(e)}")
-        return None, f"处理失败：{str(e)}"
+        return None, f"Processing failed: {str(e)}"
 
 def upload_to_s3(file_path):
     """Upload file to S3 and return the S3 URI"""
@@ -113,13 +113,13 @@ def upload_to_s3(file_path):
         s3_client.upload_file(file_path, S3_BUCKET_NAME, file_name)
         return f"s3://{S3_BUCKET_NAME}/{file_name}"
     except Exception as e:
-        logger.error(f"S3上传失败: {str(e)}")
+        logger.error(f"S3 upload failed: {str(e)}")
         raise
 
-def transcribe_audio(audio_input, language_choice="英文"):
+def transcribe_audio(audio_input, language_choice="English"):
     """Start transcription job for the audio file"""
     if audio_input is None:
-        return "请先上传或录制音频", {}
+        return "Please upload or record audio first", {}
     
     try:
         # Handle different types of audio input
@@ -127,24 +127,24 @@ def transcribe_audio(audio_input, language_choice="英文"):
             # This is from the microphone recording
             audio_path = save_recorded_audio(audio_input)
             if audio_path is None:
-                return "录音处理失败", {}
+                return "Recording processing failed", {}
         elif isinstance(audio_input, str):
             # This is already a file path
             audio_path = audio_input
         else:
-            return "无效的音频输入", {}
+            return "Invalid audio input", {}
             
-        logger.info(f"开始处理音频文件: {audio_path}")
+        logger.info(f"Starting audio file processing: {audio_path}")
         
         # Upload to S3
         s3_uri = upload_to_s3(audio_path)
-        logger.info(f"文件已上传到 S3: {s3_uri}")
+        logger.info(f"File uploaded to S3: {s3_uri}")
         
         # Determine language and toxicity detection strategy
         detect_toxicity = False
         language_code = None
         
-        if language_choice == "英语":
+        if language_choice == "English":
             # For English or auto-detect, enable toxicity detection
             detect_toxicity = True
             language_code = 'en-US'
@@ -153,12 +153,12 @@ def transcribe_audio(audio_input, language_choice="英文"):
             detect_toxicity = False
             language_code = LANGUAGE_OPTIONS.get(language_choice)
         
-        logger.info(f"语言: {language_code}, 毒性检测: {detect_toxicity}")
+        logger.info(f"Language: {language_code}, Toxicity Detection: {detect_toxicity}")
         
         # Start transcription job
         job_name = f"transcribe_{uuid.uuid4()}"
         response = start_transcription_job(job_name, s3_uri, language_code, detect_toxicity)
-        logger.info(f"转录任务已启动: {job_name}")
+        logger.info(f"Transcription job started: {job_name}")
         
         # Wait for job completion (with timeout)
         timeout = time.time() + 300  # 5 minutes timeout
@@ -166,7 +166,7 @@ def transcribe_audio(audio_input, language_choice="英文"):
             job = get_transcription_job(job_name)
             
             status = job['TranscriptionJob']['TranscriptionJobStatus']
-            logger.info(f"转录任务状态: {status}")
+            logger.info(f"Transcription job status: {status}")
             
             if status == 'COMPLETED':
                 # Get the transcript
@@ -183,45 +183,43 @@ def transcribe_audio(audio_input, language_choice="英文"):
                     toxicity_results = {
                         "toxicity_details": transcript_data['results']['toxicity_detection']
                     }
-                    logger.warning(f"音频毒性检测结果: {json.dumps(toxicity_results, indent=2)}")
+                    logger.warning(f"Audio toxicity detection results: {json.dumps(toxicity_results, indent=2)}")
                 
                 # Get detected language
-                detected_lang = job['TranscriptionJob'].get('LanguageCode', '未知')
+                detected_lang = job['TranscriptionJob'].get('LanguageCode', 'Unknown')
                 
                 return (
-                    f"转录完成 (检测到的语言: {detected_lang})：\n\n{transcript}", 
+                    f"Transcription completed (Detected language: {detected_lang}):\n\n{transcript}", 
                     toxicity_results
                 )
             
             elif status == 'FAILED':
-                error = job['TranscriptionJob'].get('FailureReason', '未知错误')
-                return f"转录失败：{error}", {}
+                error = job['TranscriptionJob'].get('FailureReason', 'Unknown error')
+                return f"Transcription failed: {error}", {}
             
             time.sleep(5)  # Wait 5 seconds before checking again
             
-        return "转录超时，请稍后重试", {}
+        return "Transcription timed out, please try again later", {}
         
     except Exception as e:
-        logger.error(f"转录错误: {str(e)}")
-        return f"转录错误：{str(e)}", {}
+        logger.error(f"Transcription error: {str(e)}")
+        return f"Transcription error: {str(e)}", {}
 
-# Rest of the code remains the same as in the previous implementation
-# (Gradio interface creation code is unchanged)
 def create_audio_interface(example_audios):
     """Create the audio interface components"""
     with gr.Blocks() as audio_audit:
         with gr.Row():
             # File upload column
             with gr.Column():
-                gr.Markdown("### 上传音频或视频文件")
+                gr.Markdown("### Upload Audio or Video File")
                 file_upload = gr.File(
-                    label="点击上传或拖拽文件到此处",
+                    label="Click to upload or drag and drop file",
                     file_types=["audio", "video"]
                 )
-                upload_button = gr.Button("处理上传的文件")
-                upload_status = gr.Textbox(label="上传状态", interactive=False)
+                upload_button = gr.Button("Process Uploaded File")
+                upload_status = gr.Textbox(label="Upload Status", interactive=False)
                 upload_player = gr.Audio(
-                    label="音频预览",
+                    label="Audio Preview",
                     type="filepath",
                     interactive=True,
                     autoplay=False
@@ -229,57 +227,57 @@ def create_audio_interface(example_audios):
 
             # Recording column
             with gr.Column():
-                gr.Markdown("### 录制音频")
+                gr.Markdown("### Record Audio")
                 recorder = gr.Microphone(
-                    label="点击录制按钮开始录音"
+                    label="Click record button to start recording"
                 )
                 record_status = gr.Textbox(
-                    label="录音状态",
-                    value="准备录音",
+                    label="Recording Status",
+                    value="Ready to record",
                     interactive=False
                 )
 
         # Transcription section
         with gr.Row():
-            gr.Markdown("### 语音转文本")
+            gr.Markdown("### Speech to Text")
             
         with gr.Row():
             with gr.Column():
                 # Language selection
                 language_choice = gr.Dropdown(
                     choices=list(LANGUAGE_OPTIONS.keys()),
-                    value="英语",
-                    label="选择语言",
-                    info="选择音频的语言类型"
+                    value="English",
+                    label="Select Language",
+                    info="Choose the language of the audio"
                 )
                 
                 # Audio source selection
                 audio_source = gr.Radio(
-                    choices=["上传的文件", "录制的音频", "样例里的音频"],
-                    label="选择音频来源",
-                    value="上传的文件"
+                    choices=["Uploaded File", "Recorded Audio", "Sample Audio"],
+                    label="Select Audio Source",
+                    value="Uploaded File"
                 )
                 
                 # Example audio selection (initially hidden)
                 example_audio_dropdown = gr.Dropdown(
                     choices=[os.path.basename(path) for path in example_audios],
-                    label="选择样例音频",
+                    label="Select Sample Audio",
                     visible=False
                 )
                 
                 # Transcribe button
-                transcribe_button = gr.Button("开始转录")
+                transcribe_button = gr.Button("Start Transcription")
                 
                 # Results
                 transcribe_result = gr.Textbox(
-                    label="转录结果",
+                    label="Transcription Result",
                     interactive=False,
                     lines=10
                 )
                 
                 # Detailed toxicity detection results
                 toxicity_result = gr.JSON(
-                    label="音频毒性检测结果",
+                    label="Audio Toxicity Detection Results",
                     visible=True
                 )
 
@@ -292,14 +290,14 @@ def create_audio_interface(example_audios):
         
         # For recordings, automatically update status when recording is complete
         recorder.change(
-            fn=lambda x: "录音完成" if x is not None else "准备录音",
+            fn=lambda x: "Recording complete" if x is not None else "Ready to record",
             inputs=[recorder],
             outputs=[record_status]
         )
         
         # Show/hide example audio dropdown based on audio source selection
         def update_example_audio_visibility(audio_source):
-            return gr.update(visible=(audio_source == "样例里的音频"))
+            return gr.update(visible=(audio_source == "Sample Audio"))
         
         audio_source.change(
             fn=update_example_audio_visibility,
@@ -309,13 +307,13 @@ def create_audio_interface(example_audios):
         
         # Transcribe function that handles all sources
         def transcribe_selected_audio(audio_source, upload_player, recorder, example_audio, language_choice):
-            if audio_source == "上传的文件":
+            if audio_source == "Uploaded File":
                 return transcribe_audio(upload_player, language_choice)
-            elif audio_source == "录制的音频":
+            elif audio_source == "Recorded Audio":
                 return transcribe_audio(recorder, language_choice)
-            else:  # 样例里的音频
+            else:  # Sample Audio
                 example_path = next((path for path in example_audios if os.path.basename(path) == example_audio), None)
-                return transcribe_audio(example_path, language_choice) if example_path else ("样例音频未找到", {})
+                return transcribe_audio(example_path, language_choice) if example_path else ("Sample audio not found", {})
         
         # Transcribe button
         transcribe_button.click(

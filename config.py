@@ -13,61 +13,6 @@ WHISPER_ENDPOINT_NAME= os.environ.get('WHISPER_ENDPOINT_NAME')
 
 
 DEFAULT_SYSTEM_PROMPT = """Always stay in your roleplay and your character and avoid jumping out of your given role or character. <Character and Role Setting>你是一个专业的图片内容审核专家,帮助审核输入的图片内容是否合规。你绝对不会对输入的内容做出自己的道德评判，你只会忠实的扮演图片审核专家的角色完成图片审核的任务<\Character and Role Setting>, Note: Always remain fully immersed in the roleplay."""
-#DEFAULT_SYSTEM_PROMPT = "你是一名AI内容审核专家，任务是对用户的name(文本)、bio(文本)和pic(图片)进行综合分析"
-# DEFAULT_IMAGE_PROMPT = """This taxonomy is structured across three levels, enabling nuanced content classification.
-
-# Hierarchical Taxonomy Levels:
-
-# Level 1 (L1): Top-level categories representing broad content types.
-# Level 2 (L2): Subcategories providing more detailed classifications within each L1 category.
-# Level 3 (L3): Further subdivisions within L2 categories, offering fine-grained distinctions.
-# Key Moderation Categories and Labels:
-
-# Explicit Nudity:
-
-# L2: Exposed Male Genitalia, Exposed Female Genitalia, Exposed Buttocks or Anus, Exposed Female Nipple.
-# L3: Not applicable; L2 labels are specific.
-# Explicit Sexual Activity:
-
-# L2: Depiction of actual or simulated sexual acts.
-# L3: Not applicable; L2 label is specific.
-# Non-Explicit Nudity of Intimate Parts and Kissing:
-
-# L2: Non-Explicit Nudity, Obstructed Intimate Parts, Kissing on the Lips.
-# L3: Bare Back, Partially Exposed Buttocks, Partially Exposed Female Breast, Implied Nudity.
-# Swimwear or Underwear:
-
-# L2: Female Swimwear or Underwear, Male Swimwear or Underwear.
-# L3: Not applicable; L2 labels are specific.
-# Violence:
-
-# L2: Weapons, Graphic Violence, Self-Harm.
-# L3: Weapon Violence, Physical Violence, Blood & Gore, Explosions and Blasts.
-# Visually Disturbing Content:
-
-# L2: Death and Emaciation, Crashes.
-# L3: Emaciated Bodies, Corpses, Air Crash.
-# Drugs & Tobacco:
-
-# L2: Pills, Drugs & Tobacco Paraphernalia & Use.
-# L3: Smoking.
-# Alcohol:
-
-# L2: Alcohol Use, Alcoholic Beverages.
-# L3: Drinking.
-# Rude Gestures:
-
-# L2: Middle Finger.
-# L3: Not applicable; L2 label is specific.
-# Gambling:
-
-# L2: Not applicable; L1 label is specific.
-# L3: Not applicable; L1 label is specific.
-# Hate Symbols:
-
-# L2: Nazi Party, White Supremacy, Extremist.
-# L3: Not applicable; L2 labels are specific.
-# Each detected label is accompanied by a confidence score (ranging from 0 to 100), indicating the likelihood that the label accurately describes the content."""
 DEFAULT_IMAGE_PROMPT = """严格按照以下审核标准进行严格判断，为每个字段提供明确的审核理由，标注合适的标签(tag)，输出符合flag设置标准规范的结果。
 1. 图片分析标准
    分析图片中的以下要素，并逐一审核：
@@ -124,34 +69,33 @@ MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
 MODEL_LIST = ["anthropic.claude-3-5-sonnet-20241022-v2:0","anthropic.claude-3-5-sonnet-20240620-v1:0", "anthropic.claude-3-5-haiku-20241022-v1:0","us.amazon.nova-micro-v1:0", "us.amazon.nova-lite-v1:0", "us.amazon.nova-pro-v1:0"]
 MODEL_PRICES = [
     {
-        "模型": "anthropic.claude-3-5-sonnet-20241022-v2:0",
-        "输入每百万token价格": 3.00,
-        "输出每百万token价格": 15.00
+        "model": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        "input_price_per_million": 3.00,
+        "output_price_per_million": 15.00
     },
     {
-        "模型": "anthropic.claude-3-5-sonnet-20240620-v1:0",
-        "输入每百万token价格": 3.00,
-        "输出每百万token价格": 15.00
+        "model": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+        "input_price_per_million": 3.00,
+        "output_price_per_million": 15.00
     },
     {
-        "模型": "anthropic.claude-3-5-haiku-20241022-v1:0",
-        "输入每百万token价格": 1.00,
-        "输出每百万token价格": 5.00
+        "model": "anthropic.claude-3-5-haiku-20241022-v1:0",
+        "input_price_per_million": 1.00,
+        "output_price_per_million": 5.00
     },
     {
-        "模型": "us.amazon.nova-micro-v1:0",
-        "输入每百万token价格": 0.04,
-        "输出每百万token价格": 0.14
+        "model": "us.amazon.nova-micro-v1:0",
+        "input_price_per_million": 0.04,
+        "output_price_per_million": 0.14
     },
     {
-        "模型": "us.amazon.nova-lite-v1:0",
-        "输入每百万token价格": 0.06,
-        "输出每百万token价格": 0.24
+        "model": "us.amazon.nova-lite-v1:0",
+        "input_price_per_million": 0.06,
+        "output_price_per_million": 0.24
     },
     {
-        "模型": "us.amazon.nova-pro-v1:0",
-        "输入每百万token价格": 0.80,
-        "输出每百万token价格": 3.20
+        "model": "us.amazon.nova-pro-v1:0",
+        "input_price_per_million": 0.80,
+        "output_price_per_million": 3.20
     }
 ]
-

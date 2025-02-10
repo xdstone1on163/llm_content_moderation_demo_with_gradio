@@ -1,0 +1,261 @@
+# Chinese translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-02-10 13:46+0800\n"
+"PO-Revision-Date: 2025-02-10 13:46+0800\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh\n"
+"Language-Team: zh <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: main.py:171
+msgid "## Content Moderation Demo"
+msgstr "## 内容审核演示"
+
+#: main.py:175
+msgid "Language"
+msgstr "语言"
+
+#: main.py:181
+msgid "Select Model"
+msgstr "选择模型"
+
+#: main.py:185
+msgid "Model Price"
+msgstr "模型价格"
+
+#: main.py:191
+#, python-brace-format
+msgid ""
+"Input price per million tokens: ${:.2f}\n"
+"Output price per million tokens: ${:.2f}"
+msgstr ""
+"每百万输入token价格：${:.2f}\n"
+"每百万输出token价格：${:.2f}"
+
+#: main.py:193
+msgid "Price information not available"
+msgstr "价格信息不可用"
+
+#: main.py:210
+msgid "Image Audit"
+msgstr "图片审核"
+
+#: main.py:211
+msgid "### Example Images"
+msgstr "### 示例图片"
+
+#: main.py:216
+msgid "Click to select an example image"
+msgstr "点击选择示例图片"
+
+#: main.py:222
+msgid "Upload Image"
+msgstr "上传图片"
+
+#: main.py:237
+msgid "LLM Image Multimodal Analysis Custom Prompt"
+msgstr "LLM图片多模态分析自定义提示词"
+
+#: main.py:238
+msgid "LLM Result"
+msgstr "LLM结果"
+
+#: main.py:241
+msgid "Rekognition Audit Results"
+msgstr "Rekognition审核结果"
+
+#: main.py:243
+msgid "Moderation Labels"
+msgstr "审核标签"
+
+#: main.py:244
+msgid "Detection Labels"
+msgstr "检测标签"
+
+#: main.py:245
+msgid "Detected Faces"
+msgstr "检测到的人脸"
+
+#: main.py:247
+msgid "Analyze Image"
+msgstr "分析图片"
+
+#: main.py:250
+msgid "Static Video Audit"
+msgstr "静态视频审核"
+
+#: main.py:251
+msgid "### Example Videos"
+msgstr "### 示例视频"
+
+#: main.py:256
+msgid "Click to select an example video"
+msgstr "点击选择示例视频"
+
+#: main.py:262
+msgid ""
+"Please use the video component below to upload a video file or record a "
+"video. The uploaded video should not exceed 200MB."
+msgstr "请使用下面的视频组件上传视频文件或录制视频。上传的视频不要超过200MB。"
+
+#: main.py:263
+msgid "Upload or Record Video"
+msgstr "上传或录制视频"
+
+#: main.py:278
+msgid "Number of frames to extract"
+msgstr "要提取的帧数"
+
+#: main.py:279
+msgid "Video Content Audit Prompt"
+msgstr "视频内容审核提示词"
+
+#: main.py:280
+msgid "Extracted Video Frames"
+msgstr "提取的视频帧"
+
+#: main.py:281
+msgid "Processing Result"
+msgstr "处理结果"
+
+#: main.py:282
+msgid "Video Content Analysis"
+msgstr "视频内容分析"
+
+#: main.py:283
+msgid "Process Video"
+msgstr "处理视频"
+
+#: main.py:286
+msgid "Video Stream Audit"
+msgstr "视频流审核"
+
+#: main.py:287
+msgid "Use camera to capture video stream"
+msgstr "使用摄像头捕获视频流"
+
+#: main.py:288
+msgid "Capture video stream from camera"
+msgstr "从摄像头捕获视频流"
+
+#: main.py:291
+msgid "Frame capture rate (seconds)"
+msgstr "帧捕获率（秒）"
+
+#: main.py:292
+msgid "Start Capturing"
+msgstr "开始捕获"
+
+#: main.py:294
+msgid "Number of frames to analyze each time"
+msgstr "每次分析的帧数"
+
+#: main.py:295
+msgid "Analysis prompt"
+msgstr "分析提示词"
+
+#: main.py:296
+msgid "Analysis frequency (seconds)"
+msgstr "分析频率（秒）"
+
+#: main.py:298
+msgid "Start Analysis"
+msgstr "开始分析"
+
+#: main.py:299
+msgid "Stop Analysis"
+msgstr "停止分析"
+
+#: main.py:300
+msgid "Stop Capturing"
+msgstr "停止捕获"
+
+#: main.py:302
+msgid "Analysis Status"
+msgstr "分析状态"
+
+#: main.py:305 main.py:306
+msgid "Captured Frames"
+msgstr "已捕获的帧"
+
+#: main.py:307
+msgid "Save path for captured frames"
+msgstr "已捕获帧的保存路径"
+
+#: main.py:311
+msgid "Audio/Video Transcription"
+msgstr "音视频转录"
+
+#: main.py:312
+msgid ""
+"Please use the component below to upload an audio/video file, record "
+"audio, or select a sample audio. Audio extraction from video files is "
+"supported."
+msgstr "请使用下面的组件上传音频/视频文件、录制音频或选择样例音频。支持从视频文件中提取音频。"
+
+#: main.py:325 main.py:346 main.py:360
+msgid "Sample Audio"
+msgstr "样例音频"
+
+#: main.py:338
+msgid "Select Audio Source"
+msgstr "选择音频来源"
+
+#: main.py:340
+msgid "Select Sample Audio"
+msgstr "选择样例音频"
+
+#: main.py:371
+msgid "Text Audit"
+msgstr "文本审核"
+
+#: main.py:372
+msgid "Input text for audit"
+msgstr "输入待审核文本"
+
+#: main.py:373
+msgid "Text audit prompt"
+msgstr "文本审核提示词"
+
+#: main.py:374
+msgid "Audit Text"
+msgstr "审核文本"
+
+#: main.py:375
+msgid "Large Language Model Analysis Result"
+msgstr "大语言模型分析结果"
+
+#: main.py:378
+msgid "Comprehend Processing Results"
+msgstr "Comprehend处理结果"
+
+#: main.py:380
+msgid "Sentiment Analysis"
+msgstr "情感分析"
+
+#: main.py:381
+msgid "Entity Recognition"
+msgstr "实体识别"
+
+#: main.py:382
+msgid "Key Phrases"
+msgstr "关键短语"
+
+#: main.py:383
+msgid "Personal Sensitive Information"
+msgstr "个人敏感信息"
+
+#: main.py:384
+msgid "Harmful Content Detection"
+msgstr "有害内容检测"

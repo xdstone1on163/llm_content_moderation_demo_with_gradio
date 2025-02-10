@@ -3,3 +3,4 @@ gradio
 pillow
 boto3
 moviepy
+Flask-Babel>=4.0.0
