@@ -40,7 +40,7 @@ def video_info(video_path):
     return {"nb_frames": nb_frames}
 
 def analyze_video_content(frames, prompt, model_id):
-    """使用选定的模型分析视频帧内容"""
+    """Analyze video frame content using the selected model"""
     
     # Prepare the message content with frames
     content = [{"text": prompt}]
@@ -97,22 +97,22 @@ def analyze_video_content(frames, prompt, model_id):
             top_p=0.9
         )
     except Exception as e:
-        logging.error(f"视频分析错误: {str(e)}")
-        analysis = "视频内容分析结果不可用"
+        logging.error(f"Video analysis error: {str(e)}")
+        analysis = "Video content analysis result unavailable"
     
     return analysis
 
 def process_video(video, num_frames, prompt, model_id):
     if video is None:
-        return None, "请先上传视频", None
+        return None, "Please upload a video first", None
 
     try:
         frames = extract_frames(video, int(num_frames))
         analysis = analyze_video_content(frames, prompt, model_id)
-        return frames, f"成功提取 {len(frames)} 帧并完成内容分析", analysis
+        return frames, f"Successfully extracted {len(frames)} frames and completed content analysis", analysis
     except Exception as e:
         logging.error(f"Error processing video: {str(e)}")
-        return None, f"处理视频时出错: {str(e)}", None
+        return None, f"Error processing video: {str(e)}", None
 
 def process_video_stream(analysis_prompt, frame_interval):
     cap = cv2.VideoCapture(0)  # Open the default camera

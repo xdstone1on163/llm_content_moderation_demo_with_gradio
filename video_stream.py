@@ -40,12 +40,12 @@ def capture_video_stream():
     cap = cv2.VideoCapture(0)  # Open default camera
     
     if not cap.isOpened():
-        return None, "无法打开摄像头", None
+        return None, "Unable to open camera", None
     
     ret, frame = cap.read()
     if not ret:
         cap.release()
-        return None, "无法读取视频流", None
+        return None, "Unable to read video stream", None
     
     cap.release()
     return frame, None, frame
@@ -57,7 +57,7 @@ def start_video_stream():
     frame, error, _ = capture_video_stream()
     if frame is not None:
         return frame_to_base64(frame)
-    return error or "无法启动视频流"
+    return error or "Unable to start video stream"
 
 def start_frame_capture(stop_capture_flag):
     """
@@ -70,14 +70,14 @@ def start_frame_capture(stop_capture_flag):
         cap = cv2.VideoCapture(0)  # Open default camera
         
         if not cap.isOpened():
-            log_queue.put("错误: 无法打开摄像头")
+            log_queue.put("Error: Unable to open camera")
             return
 
         while not stop_capture_flag.is_set():
             try:
                 ret, frame = cap.read()
                 if not ret:
-                    log_queue.put("错误: 无法读取视频流")
+                    log_queue.put("Error: Unable to read video stream")
                     break
 
                 # Save frame
@@ -88,21 +88,21 @@ def start_frame_capture(stop_capture_flag):
                 latest_captured_frame_path = saved_path
                 
                 # Log the captured frame
-                log_message = f"成功截取帧: {saved_path}"
+                log_message = f"Successfully captured frame: {saved_path}"
                 print(log_message)
                 log_queue.put(log_message)
                 
                 # Wait for 3 seconds
                 time.sleep(3)
             except Exception as e:
-                error_message = f"错误: {e}"
+                error_message = f"Error: {e}"
                 print(error_message)
                 log_queue.put(error_message)
                 break
 
         # Clean up
         cap.release()
-        log_queue.put("截帧已停止")
+        log_queue.put("Frame capture stopped")
     
     capture_thread = threading.Thread(target=capture_loop, daemon=True)
     capture_thread.start()

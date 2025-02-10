@@ -91,7 +91,7 @@ def start_transcription_job(job_name, media_file_uri, language_code=None, detect
         response = transcribe_client.start_transcription_job(**job_args)
         return response
     except Exception as e:
-        raise Exception(f"启动转录任务失败: {str(e)}")
+        raise Exception(f"Failed to start transcription job: {str(e)}")
 
 def get_transcription_job(job_name):
     """Get the status and results of a transcription job"""
@@ -101,4 +101,4 @@ def get_transcription_job(job_name):
         )
         return response
     except Exception as e:
-        raise Exception(f"获取转录任务状态失败: {str(e)}")
+        raise Exception(f"Failed to get transcription job status: {str(e)}")
