@@ -31,14 +31,14 @@ class LiveModerationManager:
 
         moderation_type = []
         if checkbox_group is None or len(checkbox_group) == 0:
-            return gr.Info("请选择审核类型")
-        if "内容审核" in checkbox_group:
+            return gr.Info("Please select the moderation type")
+        if "Content moderation" in checkbox_group:
             moderation_type.append(1)
 
-        if "人脸审核" in checkbox_group and image is None:
-            return gr.Info("错误：你选择了人脸审核，但没有上传目标人脸图片。")
+        if "Face moderation" in checkbox_group and image is None:
+            return gr.Info("You selected face moderation, but no target face image was uploaded。")
 
-        elif "人脸审核" in checkbox_group:
+        elif "Face moderation" in checkbox_group:
             image_path = f"face/{get_md5(video_url)}.jpg"
 
             # 图片上传S3
@@ -50,20 +50,23 @@ class LiveModerationManager:
             # 保存图像
             cv2.imwrite(temp_file, image_array)
             s3_client = boto3.client('s3', region_name=S3_REGION)
+            print("BUCKET_NAME")
+            print(BUCKET_NAME)
             response = s3_client.upload_file(temp_file, Bucket=BUCKET_NAME, Key=image_path)
             os.remove(temp_file)
 
             moderation_type.append(2)
 
         if video_url is None or len(video_url) == 0:
-            return gr.Info("请输入视频地址")
+            return gr.Info("Please enter the video URL")
         if is_valid_url(video_url) is False:
-            return gr.Info("请输入有效的视频地址")
+            return gr.Info("Please enter a valid video URL")
 
         print(f"submit_video {video_url}")
+
         try:
             url = SUBMIT_MODERATION
-
+            print(url)
             payload = {"token": "6666",
                        "url": video_url,
                        "moderation_type": ",".join(str(type_item) for type_item in moderation_type)}
@@ -74,15 +77,18 @@ class LiveModerationManager:
             response = requests.request("POST", url, headers=headers, json=payload)
             return gr.Info(json.loads(response.text)['message'])
         except requests.RequestException as e:
-            return gr.Info(f"视频提交失败: {str(e)}")
+            return gr.Info(f"Video submission failed: {str(e)}")
 
     def query_status(self, media_url):
         self.is_refreshing = True
         print(F"query_status {media_url}")
+
         while self.is_refreshing:
             print("query_loop")
+           
             try:
                 url =QUERY_MODERATION
+                print(url)
 
                 print(f"请求 {url}")
                 payload = {
@@ -100,14 +106,14 @@ class LiveModerationManager:
                     result = ""
                     for item in data["body"]:
                         if item["type"] == "image":
-                            result += "<h3>图片检测结果</h3>"
+                            result += "<h3>Image Detection Results</h3>"
                             for img in item["images"]:
                                 result += f"<img src='{img}' width='200'><br>"
-                            result += f"<p>审核结果：{item['message']}</p> "
+                            result += f"<p>Modetation Result：{item['message']}</p> "
                         elif item["type"] == "audio":
-                            result += f"<h3>音频检测结果</h3>"
-                            result += f"<p>原始内容：{item['original_content']}</p>"
-                            result += f"<p>审核结果：{item['message']}</p> "
+                            result += f"<h3>Audio Detection Results</h3>"
+                            result += f"<p>Original Content：{item['original_content']}</p>"
+                            result += f"<p>Moderation Result：{item['message']}</p> "
 
                     yield result
                 else:

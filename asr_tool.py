@@ -3,12 +3,14 @@ import os
 
 import boto3
 
-from config import WHISPER_ENDPOINT_NAME
+from config import WHISPER_ENDPOINT_NAME, S3_REGION
+
+
 # from tools.bedrock_text_tool import region_name
 
 
 def call_sagemaker(endpoint_name, audio_data):
-    sagemaker_runtime = boto3.client('sagemaker-runtime',region_name='us-east-1')
+    sagemaker_runtime = boto3.client('sagemaker-runtime',region_name=S3_REGION)
     # 调用 SageMaker endpoint
     response = sagemaker_runtime.invoke_endpoint(
         EndpointName=endpoint_name,

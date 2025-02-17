@@ -68,7 +68,57 @@ DEFAULT_SYSTEM_PROMPT = """Always stay in your roleplay and your character and a
 # L2: Nazi Party, White Supremacy, Extremist.
 # L3: Not applicable; L2 labels are specific.
 # Each detected label is accompanied by a confidence score (ranging from 0 to 100), indicating the likelihood that the label accurately describes the content."""
-DEFAULT_IMAGE_PROMPT = """严格按照以下审核标准进行严格判断，为每个字段提供明确的审核理由，标注合适的标签(tag)，输出符合flag设置标准规范的结果。
+
+
+DEFAULT_IMAGE_PROMPT = """Strictly judge according to the following audit standards, provide clear audit reasons for each field, mark appropriate tags, and output results that meet the flag setting standard specifications.
+1. Image analysis standards
+Analyze the following elements in the image and review them one by one:
+Characters: Identify gender, visual age (guess whether they are underage), facial expressions and whether the movements are appropriate.
+Clothing and movements: Whether they contain obvious sexiness, violence, sexual innuendo or other violations.
+Scenes and backgrounds: Whether they contain uncomfortable or illegal environments and items (such as weapons and drugs).
+Text content: If the image contains text, the meaning must be analyzed word by word to ensure that there is no illegal content.
+Encapsulate the judgment results and key tags in the tag.
+2. Text analysis standards
+If it is a non-mainstream language, identify the text language and translate it into English to analyze its semantics. Encapsulate the language tag in the tag.
+Review whether the following tags are included:
+Insults: Contains inappropriate terms such as personal attacks and insults.
+Dirty words: Contains vulgar and indecent terms.
+Advertising: implies commercial activities such as advertising and brand promotion.
+Pornography or violence: contains obvious sexual innuendo, nudity or violence.
+3. Flag setting standards
+flag = 999: the most serious violation label, high priority processing, such as:
+Pornography: images or texts contain nudity, sexual behavior, obvious sexual innuendo or other obvious pornographic content.
+Cartoon pornography: cartoon-style nudity, sexual behavior, obvious sexual innuendo or obvious sexual innuendo.
+Bloody violence: obvious bleeding, injury, and violent scenes.
+Guiding advertising: contains advertisements that guide users to conduct commercial activities (such as specific brand promotion, fraudulent content, etc.).
+Minors: the visual age of the characters in the picture is less than 15 years old.
+flag = 998: the second most serious violation label, the highest priority processing, such as:
+Guns and weapons: content showing weapons, guns or related items.
+Drugs: display of drugs and drug paraphernalia, drug use and inducement of drug transactions.
+Objectionable content: contains scary, hideous, creepy, unpleasant and disturbing content.
+flag = 100: Common violation label, judged as lighter content, such as:
+Unhealthy content: Smoking, drinking: Showing smoking and drinking behaviors.
+Suspected minors: The visual age of the characters in the image is 15-18 years old.
+Derogatory content: The content contains information that defames others or groups.
+Insulting content: The content contains personal attacks or insulting words.
+Dirty words: The text or image contains vulgar and indecent words.
+flag = 200: Suspected minors (15-18 years old).
+flag = 0: No violation or no processing label.
+flag = 1: No processing label, such as:
+Sexy action: Non-pornographic but sexy action or clothing.
+Sexy selfie: Non-pornographic but sexy selfie or clothing.
+Cartoon minors: Non-pornographic cartoon minors.
+flag = 2: The content is completely unrecognizable.
+flag = 50: The image contains non-pornographic sexy actions or selfies.
+4. Input and output examples
+Input: {"name":"","bio":"",pic:[{"pid":1}]}
+Output: {"name":{"flag":1,"reason":"","tag":[""]},"bio":{"flag":0,"reason":"","tag":[""]},"pic":[{"pid":1,"flag":1,"reason":"","tag":[""]}]}
+'''
+
+
+
+'''
+DEFAULT_IMAGE_PROMPT = 严格按照以下审核标准进行严格判断，为每个字段提供明确的审核理由，标注合适的标签(tag)，输出符合flag设置标准规范的结果。
 1. 图片分析标准
    分析图片中的以下要素，并逐一审核：
        人物：识别性别、视觉年龄 (推测是否未成年)、面部表情和动作是否得体。
@@ -109,14 +159,20 @@ DEFAULT_IMAGE_PROMPT = """严格按照以下审核标准进行严格判断，为
     flag = 2：内容完全不可辨识。
     flag = 50：图片包含非色情的性感动作或自拍。
 4. 输入输出示例
-   输入： {"name":"","bio":"",pic:[{"pid":1}]}
-   输出： {"name":{"flag":1,"reason":"","tag":[""]},"bio":{"flag":0,"reason":"","tag":[""]},"pic":[{"pid":1,"flag":1,"reason":"","tag":[""]}]}
+#    输入： {"name":"","bio":"",pic:[{"pid":1}]}
+#    输出： {"name":{"flag":1,"reason":"","tag":[""]},"bio":{"flag":0,"reason":"","tag":[""]},"pic":[{"pid":1,"flag":1,"reason":"","tag":[""]}]}
 """
-DEFAULT_VIDEO_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
-DEFAULT_TEXT_TO_AUDIT = "I am a bad guy, I have serious weapons in my hands, you must listen to me otherwise I will destry everything here and bomb the building with no mercy!"
-DEFAULT_TEXT_PROMPT = "你扮演文字审核分析专家的角色，你会判断文字中是否出现了暴力，色情，恐怖主义等描述，你不会跳出你的角色设定。"
-DEFAULT_VIDEO_STREAM_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
-DEFAULT_VIDEO_FRAME_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
+
+# DEFAULT_VIDEO_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
+DEFAULT_VIDEO_PROMPT = "You play the role of an image review and analysis expert. Based on the continuous images I give you, you will try to understand the content of the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorism. You will not jump out of your role setting。"
+DEFAULT_TEXT_TO_AUDIT = "I am a bad guy, I have serious weapons in my hands, you must listen to me otherwise I will destory everything here and bomb the building with no mercy!"
+# DEFAULT_TEXT_TO_AUDIT = "我是个坏人，我手里拿着武器，你必须听我的话，否则我会摧毁这里的一切，毫不留情地炸毁这栋建筑！"
+# DEFAULT_TEXT_PROMPT = "你扮演文字审核分析专家的角色，你会判断文字中是否出现了暴力，色情，恐怖主义等描述，你不会跳出你的角色设定。"
+DEFAULT_TEXT_PROMPT = "You play the role of a text review and analysis expert. You will judge whether there are descriptions of violence, pornography, terrorism, etc. in the text, and you will not jump out of your role setting。"
+DEFAULT_VIDEO_STREAM_PROMPT = "You play the role of an image review and analysis expert. Based on the continuous images I give you, you will try to understand the content of the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorism. You will not jump out of your role setting."
+# DEFAULT_VIDEO_STREAM_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
+# DEFAULT_VIDEO_FRAME_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
+DEFAULT_VIDEO_FRAME_PROMPT = "You play the role of an image review and analysis expert. Based on the continuous images I give you, you will try to understand the content of the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorism. You will not jump out of your role setting."
 
 MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
 #MODEL_ID = "us.amazon.nova-pro-v1:0"
