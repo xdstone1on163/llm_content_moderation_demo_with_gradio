@@ -9,6 +9,7 @@ import json
 from aws_clients import invoke_model, converse_with_model
 import cv2
 import logging
+import base64
 
 def extract_frames(video_path, num_frames):
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -102,14 +103,93 @@ def analyze_video_content(frames, prompt, model_id):
     
     return analysis
 
-def process_video(video, num_frames, prompt, model_id):
+def video_direct_understanding(video_path, prompt, model_id):
+    """Analyze video content directly using AWS Bedrock Nova model"""
+    if video_path is None:
+        return "Please upload a video first", None
+
+    try:
+        # Read video file as bytes and encode to base64
+        with open(video_path, 'rb') as video_file:
+            binary_data = video_file.read()
+            base_64_encoded_data = base64.b64encode(binary_data)
+            base64_string = base_64_encoded_data.decode('utf-8')
+        
+        # Define system prompts
+        system_list = [
+            {
+                "text": "You are an expert video content analyzer. Analyze the video content and provide detailed insights."
+            }
+        ]
+        
+        # Define message list with video and prompt
+        message_list = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "video": {
+                            "format": "mp4",
+                            "source": {"bytes": base64_string}
+                        }
+                    },
+                    {
+                        "text": prompt
+                    }
+                ]
+            }
+        ]
+        
+        # Configure inference parameters
+        inf_params = {
+            "maxTokens": 2000,
+            "temperature": 0.3,
+            "topP": 0.9,
+            "topK": 20
+        }
+        
+        # Prepare the request body
+        native_request = {
+            "schemaVersion": "messages-v1",
+            "messages": message_list,
+            "system": system_list,
+            "inferenceConfig": inf_params
+        }
+        
+        try:
+            # Invoke the model
+            response = invoke_model(
+                body=json.dumps(native_request),
+                contentType="application/json",
+                accept="application/json",
+                modelId=model_id
+            )
+            
+            # Parse the response
+            model_response = json.loads(response.get('body').read())
+            analysis = model_response["output"]["message"]["content"][0]["text"]
+            
+        except Exception as e:
+            logging.error(f"Video direct analysis error: {str(e)}")
+            analysis = "Video content analysis result unavailable"
+        
+        return "Successfully completed direct video analysis", analysis
+    except Exception as e:
+        logging.error(f"Error in direct video understanding: {str(e)}")
+        return f"Error processing video: {str(e)}", None
+
+def process_video(video, num_frames, prompt, model_id, analysis_method="frame"):
     if video is None:
         return None, "Please upload a video first", None
 
     try:
-        frames = extract_frames(video, int(num_frames))
-        analysis = analyze_video_content(frames, prompt, model_id)
-        return frames, f"Successfully extracted {len(frames)} frames and completed content analysis", analysis
+        if analysis_method == "frame":
+            frames = extract_frames(video, int(num_frames))
+            analysis = analyze_video_content(frames, prompt, model_id)
+            return frames, f"Successfully extracted {len(frames)} frames and completed content analysis", analysis
+        else:  # direct
+            result_message, analysis = video_direct_understanding(video, prompt, model_id)
+            return None, result_message, analysis
     except Exception as e:
         logging.error(f"Error processing video: {str(e)}")
         return None, f"Error processing video: {str(e)}", None

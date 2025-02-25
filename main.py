@@ -232,6 +232,23 @@ with gr.Blocks() as demo:
                     gr.Markdown("Please use the video component below to upload a video file or record a video. The uploaded video should not exceed 200MB.")
                     video_input = gr.Video(label="Upload or Record Video")
 
+                    with gr.Row():
+                        analysis_method = gr.Radio(
+                            choices=["Process Video with Frames", "Understand Video Directly"],
+                            value="Process Video with Frames",
+                            label="Analysis Method",
+                            interactive=True
+                        )
+                        
+                    # Add specific model selection for direct video understanding
+                    nova_models = ["us.amazon.nova-lite-v1:0", "us.amazon.nova-pro-v1:0"]  # Nova models that support video
+                    direct_video_model = gr.Dropdown(
+                        choices=nova_models,
+                        value=nova_models[0],
+                        label="Select Nova Model (for direct video understanding)",
+                        visible=False  # Initially hidden since default is frame-based
+                    )
+
                     def load_example_video(evt: gr.SelectData, gallery):
                         try:
                             selected_path = example_videos[evt.index]
@@ -245,12 +262,47 @@ with gr.Blocks() as demo:
                             return None
 
                     example_gallery_videos.select(load_example_video, example_gallery_videos, video_input)
-                    num_frames_input = gr.Slider(minimum=1, maximum=20, step=1, value=5, label="Number of frames to extract")
+                    
+                    # Add frame slider with conditional visibility
+                    num_frames_input = gr.Slider(
+                        minimum=1, 
+                        maximum=20, 
+                        step=1, 
+                        value=5, 
+                        label="Number of frames to extract",
+                        visible=True  # Initially visible since default is frame-based
+                    )
+                    
                     video_prompt_input = gr.Textbox(label="Video Content Audit Prompt", value=DEFAULT_VIDEO_PROMPT, lines=5)
-                    video_output = gr.Gallery(label="Extracted Video Frames", columns=20, height="auto")
+                    
+                    with gr.Column(visible=True) as frame_based_components:
+                        video_output = gr.Gallery(
+                            label="Extracted Video Frames", 
+                            columns=20, 
+                            height="auto"
+                        )
+                    
                     video_result = gr.Textbox(label="Processing Result")
                     video_analysis = gr.Textbox(label="Video Content Analysis")
                     video_submit_button = gr.Button("Process Video")
+
+                    def update_component_visibility(method):
+                        is_frame_based = (method == "Process Video with Frames")
+                        return [
+                            gr.update(visible=is_frame_based),  # frame slider
+                            gr.update(visible=not is_frame_based),  # nova model dropdown
+                            gr.update(visible=is_frame_based),  # general model dropdown
+                            gr.update(value=""),  # clear processing result
+                            gr.update(value=""),  # clear video analysis
+                            gr.update(visible=is_frame_based),  # frame based components
+                        ]
+                    
+                    analysis_method.change(
+                        fn=update_component_visibility,
+                        inputs=[analysis_method],
+                        outputs=[num_frames_input, direct_video_model, model_dropdown, 
+                                video_result, video_analysis, frame_based_components]
+                    )
 
                 # Video stream audit tab
                 with gr.TabItem("Video Stream Audit"):
@@ -383,9 +435,20 @@ with gr.Blocks() as demo:
                          rekognition_faces_output]
             )
 
+            def process_video_wrapper(video, num_frames, prompt, general_model, nova_model, method):
+                # Use appropriate model based on the selected method
+                selected_model = nova_model if method == "Understand Video Directly" else general_model
+                analysis_method = "direct" if method == "Understand Video Directly" else "frame"
+                frames, result_msg, analysis = process_video(video, num_frames, prompt, selected_model, analysis_method)
+                
+                # For direct understanding, don't update the video output gallery
+                if method == "Understand Video Directly":
+                    return None, result_msg, analysis
+                return frames, result_msg, analysis
+
             video_submit_button.click(
-                fn=process_video,
-                inputs=[video_input, num_frames_input, video_prompt_input, model_dropdown],
+                fn=process_video_wrapper,
+                inputs=[video_input, num_frames_input, video_prompt_input, model_dropdown, direct_video_model, analysis_method],
                 outputs=[video_output, video_result, video_analysis]
             )
 
