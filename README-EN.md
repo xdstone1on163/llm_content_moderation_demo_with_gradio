@@ -9,8 +9,11 @@ This is a multimedia content moderation and transcription system demo based on A
    - Supports identification of violence, adult content, offensive images, etc.
 
 2. **Video Moderation**
-   - Uses large language models to analyze inappropriate content in videos
-   - Provides detailed content risk assessment
+   - Supports two analysis methods:
+     * Frame-based analysis: Extracts and analyzes key frames using large language models
+     * Direct video understanding: Uses AWS Bedrock Nova models to analyze entire videos without frame extraction
+   - Provides detailed content risk assessment and insights
+   - Allows comparison between frame-based and direct analysis approaches
 
 3. **Video Stream Moderation**
    - Uses camera to capture real-time video stream
@@ -141,6 +144,13 @@ Ensure the IAM role includes the following policies:
 - AmazonTranscribeFullAccess
 - AmazonComprehendFullAccess
 - AmazonS3FullAccess
+- AWSBedrockFullAccess (for Nova model access)
+
+### AWS Bedrock Configuration
+1. Ensure you have access to AWS Bedrock in your region
+2. Enable the following models in AWS Bedrock:
+   - Claude models for frame-based analysis
+   - Nova Lite and Pro models for direct video understanding
 
 ## Security Considerations
 
