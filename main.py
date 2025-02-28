@@ -436,15 +436,43 @@ with gr.Blocks() as demo:
             )
 
             def process_video_wrapper(video, num_frames, prompt, general_model, nova_model, method):
-                # Use appropriate model based on the selected method
-                selected_model = nova_model if method == "Understand Video Directly" else general_model
-                analysis_method = "direct" if method == "Understand Video Directly" else "frame"
-                frames, result_msg, analysis = process_video(video, num_frames, prompt, selected_model, analysis_method)
-                
-                # For direct understanding, don't update the video output gallery
-                if method == "Understand Video Directly":
-                    return None, result_msg, analysis
-                return frames, result_msg, analysis
+                try:
+                    # Use appropriate model based on the selected method
+                    selected_model = nova_model if method == "Understand Video Directly" else general_model
+                    analysis_method = "direct" if method == "Understand Video Directly" else "frame"
+                    
+                    # Handle video path based on input type
+                    video_path = None
+                    if isinstance(video, str):
+                        # Example video or already a path
+                        video_path = video
+                    elif video is not None:
+                        # Uploaded video through Gradio UI
+                        video_path = video.name if hasattr(video, 'name') else None
+                    
+                    if video_path is None:
+                        return None, "No video file provided", None
+                    
+                    # Check file size
+                    file_size = os.path.getsize(video_path)
+                    max_size = 25 * 1024 * 1024  # 25 MB limit for direct understanding
+                    logging.info(f"Video file size: {file_size / (1024 * 1024):.2f} MB")
+                    
+                    if method == "Understand Video Directly" and file_size > max_size:
+                        error_msg = f"Video file size ({file_size / (1024 * 1024):.2f} MB) exceeds the maximum allowed size (25 MB) for direct video understanding. Please use a smaller video file or try the frame-based analysis method."
+                        logging.error(error_msg)
+                        return None, error_msg, None
+                    
+                    frames, result_msg, analysis = process_video(video_path, num_frames, prompt, selected_model, analysis_method)
+                    
+                    # For direct understanding, don't update the video output gallery
+                    if method == "Understand Video Directly":
+                        return None, result_msg, analysis
+                    return frames, result_msg, analysis
+                    
+                except Exception as e:
+                    logging.error(f"Error in process_video_wrapper: {str(e)}")
+                    return None, f"Error processing video: {str(e)}", None
 
             video_submit_button.click(
                 fn=process_video_wrapper,

@@ -10,6 +10,7 @@ from aws_clients import invoke_model, converse_with_model
 import cv2
 import logging
 import base64
+import time
 
 def extract_frames(video_path, num_frames):
     with tempfile.TemporaryDirectory() as temp_dir:
