@@ -1,112 +1,115 @@
-# 多媒体内容转录与审核系统Demo
+# Multimedia Content Transcription and Moderation System Demo
 
-## 项目简介
+## Project Overview
 
-这是一个基于AWS服务的多媒体内容审核与转录系统Demo，提供以下核心功能：
+This is a multimedia content moderation and transcription system demo based on AWS services, providing the following core functionalities:
 
-1. **图像审核**
-   - 使用大语言模型和Amazon Rekognition检测图像中的不适当内容
-   - 支持识别暴力、成人内容、冒犯性图像等
+1. **Image Moderation**
+   - Uses large language models and Amazon Rekognition to detect inappropriate content in images
+   - Supports identification of violence, adult content, offensive images, etc.
 
-2. **视频审核**
-   - 使用大语言模型分析视频中的不适当内容
-   - 提供详细的内容风险评估
+2. **Video Moderation**
+   - Supports two analysis methods:
+     * Frame-based analysis: Extracts and analyzes key frames using large language models
+     * Direct video understanding: Uses AWS Bedrock Nova models to analyze entire videos without frame extraction
+   - Provides detailed content risk assessment and insights
+   - Allows comparison between frame-based and direct analysis approaches
 
-3. **视频流审核**
-   - 使用摄像头捕获实时视频流
-   - 支持自定义截帧频率和分析频率
-   - 对截取的视频帧进行内容审核和分析
+3. **Video Stream Moderation**
+   - Uses camera to capture real-time video stream
+   - Supports custom frame capture and analysis frequency
+   - Performs content moderation and analysis on captured video frames
 
-4. **音频转录与毒性检测**
-   - 使用AWS Transcribe进行多语言音频转录
-   - 对英文音频进行毒性内容检测
-   - 识别潜在的有害语音内容
+4. **Audio Transcription and Toxicity Detection**
+   - Uses AWS Transcribe for multilingual audio transcription
+   - Performs toxicity content detection for English audio
+   - Identifies potentially harmful voice content
 
-5. **文本审核**
-   - 使用大语言模型和AWS Comprehend分析文本中的敏感或不适当内容
+5. **Text Moderation**
+   - Uses large language models and AWS Comprehend to analyze sensitive or inappropriate content in text
 
-## 界面截图
-**图片审核界面：**
-<img width="1189" alt="Screenshot 2024-11-29 at 5 49 41 PM" src="https://github.com/user-attachments/assets/1514699b-93ba-4b80-9e66-6ca83e46a40d">
-**视频审核界面：**
-<img width="1210" alt="Screenshot 2024-11-29 at 5 49 52 PM" src="https://github.com/user-attachments/assets/501ad79d-3df3-44ba-869b-a402eaba1bd7">
-**视频流审核界面：**
-<img width="1127" alt="Screenshot 2024-12-09 at 6 08 04 AM" src="https://github.com/user-attachments/assets/764865cb-fed0-405b-b9a1-03e970705f78">
-**音视频转录界面：**
-<img width="1187" alt="Screenshot 2024-11-29 at 5 50 18 PM" src="https://github.com/user-attachments/assets/a0ec8297-5864-433f-84bf-9f8d61669153">
-**文本审核界面：**
-<img width="1212" alt="Screenshot 2024-11-29 at 5 50 26 PM" src="https://github.com/user-attachments/assets/baada4a6-960b-4d93-bbef-106e0dc6d796">
+## Interface Screenshots
+**Image Moderation Interface:**
+<img width="1189" alt="Screenshot 2024-11-29 at 5 49 41 PM" src="https://github.com/user-attachments/assets/1514699b-93ba-4b80-9e66-6ca83e46a40d">
+**Video Moderation Interface:**
+<img width="1210" alt="Screenshot 2024-11-29 at 5 49 52 PM" src="https://github.com/user-attachments/assets/501ad79d-3df3-44ba-869b-a402eaba1bd7">
+**Video Stream Moderation Interface:**
+<img width="1127" alt="Screenshot 2024-12-09 at 6 08 04 AM" src="https://github.com/user-attachments/assets/764865cb-fed0-405b-b9a1-03e970705f78">
+**Audio/Video Transcription Interface:**
+<img width="1187" alt="Screenshot 2024-11-29 at 5 50 18 PM" src="https://github.com/user-attachments/assets/a0ec8297-5864-433f-84bf-9f8d61669153">
+**Text Moderation Interface:**
+<img width="1212" alt="Screenshot 2024-11-29 at 5 50 26 PM" src="https://github.com/user-attachments/assets/baada4a6-960b-4d93-bbef-106e0dc6d796">
 
-## 技术栈
+## Technology Stack
 
 - Python 3.8+
 - AWS SDK (boto3)
-- Gradio (Web界面)
+- Gradio (Web interface)
 - Amazon Rekognition
 - Amazon Transcribe
 - Amazon Comprehend
 
-## 环境依赖
+## Environment Dependencies
 
-### 必要的系统依赖
+### Required System Dependencies
 - Python 3.8+
 - pip
 - ffmpeg
 - git
 
-## 在macOS上部署项目
+## Deploying the Project on macOS
 
-### 1. 安装Homebrew（如果尚未安装）
+### 1. Install Homebrew (if not already installed)
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-### 2. 安装系统依赖
+### 2. Install System Dependencies
 ```bash
 brew install python@3.11 ffmpeg git
 ```
 
-### 3. 克隆项目
+### 3. Clone the Project
 ```bash
 git clone https://github.com/xdstone1on163/llm_content_moderation_demo_with_gradio.git
 cd llm_content_moderation_demo_with_gradio
 ```
 
-### 4. 配置Conda虚拟环境（https://docs.anaconda.com/miniconda/install/）
+### 4. Configure Conda Virtual Environment (https://docs.anaconda.com/miniconda/install/)
 ```bash
 conda create -n myenv python=3.11
 conda activate myenv
 ```
 
-### 5. 安装Python依赖
+### 5. Install Python Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 6. AWS凭证配置
+### 6. AWS Credentials Configuration
 ```bash
 aws configure
-# 输入您的AWS Access Key ID
-# 输入您的AWS Secret Access Key
-# 默认区域：us-west-2
-# 默认输出格式：json
+# Enter your AWS Access Key ID
+# Enter your AWS Secret Access Key
+# Default region: us-west-2
+# Default output format: json
 ```
 
-### 7. 运行应用
+### 7. Run the Application
 ```bash
 python main.py
 ```
 
-## 配置文件说明
+## Configuration File Description
 
 ### config.py
-config.py文件包含项目的主要配置参数，包括：
-- 模型提示词（Prompts）
-- 模型列表和价格配置
-- S3存储桶名称
-- 其他系统默认参数
+The config.py file contains the main configuration parameters for the project, including:
+- Model prompts
+- Model list and price configuration
+- S3 bucket name
+- Other system default parameters
 
-示例：
+Example:
 ```python
 # S3 bucket configuration
 S3_BUCKET_NAME = "your-bucket-name"
@@ -115,55 +118,62 @@ S3_BUCKET_NAME = "your-bucket-name"
 MODEL_LIST = ["model1", "model2"]
 ```
 
-### .env文件
-项目支持使用.env文件来配置敏感信息和环境变量。创建.env文件在项目根目录：
+### .env File
+The project supports using a .env file to configure sensitive information and environment variables. Create a .env file in the project root directory:
 ```bash
 # AWS Credentials
 AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
 AWS_DEFAULT_REGION=us-west-2
 
-# S3 Configuration (可选，会覆盖config.py中的设置)
+# S3 Configuration (optional, will override settings in config.py)
 S3_BUCKET_NAME=your-bucket-name
 ```
 
-注意：
-- .env文件包含敏感信息，已在.gitignore中配置忽略，不会被提交到版本控制系统
-- 环境变量的值会覆盖config.py中的默认设置
-- 建议在本地开发时使用.env文件，在生产环境使用系统环境变量
-- 另外确保在你使用的AWS区域已经通过Bedrock服务开通了Claude/Nova等相关模型的权限
+Note:
+- The .env file contains sensitive information and is configured to be ignored in .gitignore, it will not be committed to the version control system
+- Environment variable values will override default settings in config.py
+- It is recommended to use the .env file for local development and system environment variables in production
+- Also ensure that you have enabled permissions for Claude/Nova and other related models through the Bedrock service in your AWS region
 
-## AWS服务配置
+## AWS Service Configuration
 
-### 必要的IAM权限
-确保IAM角色包含以下策略：
+### Required IAM Permissions
+Ensure the IAM role includes the following policies:
 - AmazonRekognitionFullAccess
 - AmazonTranscribeFullAccess
 - AmazonComprehendFullAccess
 - AmazonS3FullAccess
+- AWSBedrockFullAccess (for Nova model access)
 
-## 安全注意事项
+### AWS Bedrock Configuration
+1. Ensure you have access to AWS Bedrock in your region
+2. Enable the following models in AWS Bedrock:
+   - Claude models for frame-based analysis
+   - Nova Lite and Pro models for direct video understanding
 
-1. 始终使用最小权限原则配置IAM角色
-2. 定期轮换AWS访问密钥
-3. 不要将敏感凭证提交到版本控制系统
+## Security Considerations
 
-## 许可证
+1. Always configure IAM roles using the principle of least privilege
+2. Rotate AWS access keys regularly
+3. Do not commit sensitive credentials to the version control system
 
-[选择并添加适当的开源许可证，如MIT、Apache 2.0等]
+## License
 
-## 贡献指南
+[Choose and add an appropriate open-source license, such as MIT, Apache 2.0, etc.]
 
-1. Fork项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m '添加了某某特性'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 提交Pull Request
+## Contribution Guidelines
 
-## 联系方式
+1. Fork the project
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## Contact Information
 
 [xdstone1@163.com]
 
 ---
 
-**注意**：本项目仅供学习和研究使用，请遵守相关法律法规，尊重版权和隐私。
+**Note**: This project is for learning and research purposes only. Please comply with relevant laws and regulations, and respect copyright and privacy.
