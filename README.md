@@ -30,15 +30,15 @@ This is a multimedia content moderation and transcription system demo based on A
 
 ## Interface Screenshots
 **Image Moderation Interface:**
-<img width="1189" alt="Screenshot 2024-11-29 at 5 49 41 PM" src="https://github.com/user-attachments/assets/1514699b-93ba-4b80-9e66-6ca83e46a40d">
+<img width="1328" alt="Screenshot 2025-03-01 at 5 21 18 PM" src="https://github.com/user-attachments/assets/77ebe253-00c3-46ac-9ac8-f15644466a81" />
 **Video Moderation Interface:**
-<img width="1210" alt="Screenshot 2024-11-29 at 5 49 52 PM" src="https://github.com/user-attachments/assets/501ad79d-3df3-44ba-869b-a402eaba1bd7">
+<img width="1347" alt="Screenshot 2025-03-01 at 5 21 32 PM" src="https://github.com/user-attachments/assets/b7c516f8-914b-48c5-97de-071a5a9c61d8" />
 **Video Stream Moderation Interface:**
-<img width="1127" alt="Screenshot 2024-12-09 at 6 08 04 AM" src="https://github.com/user-attachments/assets/764865cb-fed0-405b-b9a1-03e970705f78">
+<img width="1327" alt="Screenshot 2025-03-01 at 5 21 42 PM" src="https://github.com/user-attachments/assets/0c560b5b-fdcf-4b00-8842-6b2974332986" />
 **Audio/Video Transcription Interface:**
-<img width="1187" alt="Screenshot 2024-11-29 at 5 50 18 PM" src="https://github.com/user-attachments/assets/a0ec8297-5864-433f-84bf-9f8d61669153">
+<img width="1338" alt="Screenshot 2025-03-01 at 5 22 00 PM" src="https://github.com/user-attachments/assets/662748d9-5c5d-4618-b5ac-39134ebae8d1" />
 **Text Moderation Interface:**
-<img width="1212" alt="Screenshot 2024-11-29 at 5 50 26 PM" src="https://github.com/user-attachments/assets/baada4a6-960b-4d93-bbef-106e0dc6d796">
+<img width="1336" alt="Screenshot 2025-03-01 at 5 21 50 PM" src="https://github.com/user-attachments/assets/881185e5-3fde-47f5-834b-ac8ae9056102" />
 
 ## Technology Stack
 
