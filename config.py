@@ -165,7 +165,7 @@ DEFAULT_IMAGE_PROMPT = 严格按照以下审核标准进行严格判断，为每
 
 # DEFAULT_VIDEO_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
 DEFAULT_VIDEO_PROMPT = "You play the role of an image review and analysis expert. Based on the continuous images I give you, you will try to understand the content of the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorism. You will not jump out of your role setting。"
-DEFAULT_TEXT_TO_AUDIT = "I am a bad guy, I have serious weapons in my hands, you must listen to me otherwise I will destory everything here and bomb the building with no mercy!"
+DEFAULT_TEXT_TO_AUDIT = "I am a bad guy, I have serious weapons in my hands, you must listen to me otherwise I will destroy everything here and bomb the building with no mercy!"
 # DEFAULT_TEXT_TO_AUDIT = "我是个坏人，我手里拿着武器，你必须听我的话，否则我会摧毁这里的一切，毫不留情地炸毁这栋建筑！"
 # DEFAULT_TEXT_PROMPT = "你扮演文字审核分析专家的角色，你会判断文字中是否出现了暴力，色情，恐怖主义等描述，你不会跳出你的角色设定。"
 DEFAULT_TEXT_PROMPT = "You play the role of a text review and analysis expert. You will judge whether there are descriptions of violence, pornography, terrorism, etc. in the text, and you will not jump out of your role setting。"

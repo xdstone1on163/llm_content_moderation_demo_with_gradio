@@ -67,12 +67,15 @@ class LiveModerationManager:
         try:
             url = SUBMIT_MODERATION
             print(url)
-            payload = {"token": "6666",
+            payload = {
                        "url": video_url,
-                       "moderation_type": ",".join(str(type_item) for type_item in moderation_type)}
+                       "moderation_type": ",".join(str(type_item) for type_item in moderation_type)
+                        }
 
             headers = {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "user_id": "lee",
+                "token": "token_123"
             }
             response = requests.request("POST", url, headers=headers, json=payload)
             return gr.Info(json.loads(response.text)['message'])
@@ -92,12 +95,13 @@ class LiveModerationManager:
 
                 print(f"请求 {url}")
                 payload = {
-                    "token": "6666",
                     "url": media_url
                 }
 
                 headers = {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "user_id":"lee",
+                    "token":"token_123"
                 }
                 response = requests.request("POST", url, headers=headers, json=payload)
                 data = response.json()
@@ -107,9 +111,11 @@ class LiveModerationManager:
                     for item in data["body"]:
                         if item["type"] == "image":
                             result += "<h3>Image Detection Results</h3>"
-                            for img in item["images"]:
+                            for img in item["files"]:
                                 result += f"<img src='{img}' width='200'><br>"
                             result += f"<p>Modetation Result：{item['message']}</p> "
+                            result += f"<p>Modetation TAG：{item['tag']}</p> "
+                            result += f"<p>Modetation Level：{item['level']}</p> "
                         elif item["type"] == "audio":
                             result += f"<h3>Audio Detection Results</h3>"
                             result += f"<p>Original Content：{item['original_content']}</p>"
