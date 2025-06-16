@@ -17,10 +17,9 @@ if AK and SK:
     client_args["aws_secret_access_key"] = SK
 else:
     print("未指定AKSK")
-bedrock = boto3.client(**client_args)
 
-bedrock_client = boto3.client('bedrock-runtime', region_name=region)
-
+client_args['region_name']=region
+bedrock_client = boto3.client(**client_args)
 
 
 
