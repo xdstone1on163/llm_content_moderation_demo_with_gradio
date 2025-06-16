@@ -1,13 +1,32 @@
 import boto3
+from config import SK, AK, S3_REGION
 
 # Initialize AWS clients with specific region
-region = 'us-west-2'  # Using us-west-2 region
+region =S3_REGION  # Using us-west-2 region
 
 # Initialize AWS clients
 rekognition_client = boto3.client('rekognition', region_name=region)
-comprehend_client = boto3.client('comprehend', region_name=region)
+# comprehend_client = boto3.client('comprehend', region_name=region)
+
+
+client_args = {"service_name": "bedrock-runtime"}
+
+if AK and SK:
+    print("加载指定AKSK")
+    client_args["aws_access_key_id"] =AK
+    client_args["aws_secret_access_key"] = SK
+else:
+    print("未指定AKSK")
+bedrock = boto3.client(**client_args)
+
 bedrock_client = boto3.client('bedrock-runtime', region_name=region)
+
+
+
+
 transcribe_client = boto3.client('transcribe', region_name=region)
+
+
 s3_client = boto3.client('s3', region_name=region)
 
 def invoke_model(body, contentType, accept, modelId):

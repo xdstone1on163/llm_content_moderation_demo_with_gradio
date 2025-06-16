@@ -9,6 +9,8 @@ TRANSCRIBE_BUCKET=os.environ.get('TRANSCRIBE_BUCKET')
 SUBMIT_MODERATION =  os.environ.get('SUBMIT_MODERATION')
 QUERY_MODERATION = os.environ.get('QUERY_MODERATION')
 WHISPER_ENDPOINT_NAME= os.environ.get('WHISPER_ENDPOINT_NAME')
+AK= os.environ.get('AK')
+SK= os.environ.get('SK')
 
 
 
@@ -113,7 +115,158 @@ flag = 50: The image contains non-pornographic sexy actions or selfies.
 4. Input and output examples
 Input: {"name":"","bio":"",pic:[{"pid":1}]}
 Output: {"name":{"flag":1,"reason":"","tag":[""]},"bio":{"flag":0,"reason":"","tag":[""]},"pic":[{"pid":1,"flag":1,"reason":"","tag":[""]}]}
+"""
+
+
+
+# DEFAULT_VIDEO_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
+DEFAULT_VIDEO_PROMPT = '''
+你是网络社区的严格内容审核员。您的工作是仔细严格地审核每张图片，以维护安全健康的在线环境。为了保护读者免受不当内容的侵害，每张图片都必须单独审核，并且每张图片应按照指南至少审核两次。请单独分析每张图片，并根据审核标准判断其是否合规。您的判断将用于对图片进行评级。
+
+
+## 请根据以下审核标准对用户上传的图片进行审核,每个图片可能违反多条规则。请严格对ViolationTag1进行审核。
+1. ViolationTag1
+- 性行为
+2. ViolationTag2
+- 亲吻嘴唇
+3. ViolationTag3
+- 身穿女性泳装、胸罩、内裤
+- 身穿男士泳装、内裤    
+4. ViolationTag4
+- 疑似手淫的行为
+5. ViolationTag5
+- 涉及政治人物、政党、国家领导人等评论
+- 有分裂言论、政治攻击、涉政标语等
+6. ViolationTag6
+- 暴力行为、血腥画面、打斗、尸体、枪击
+- 恐怖袭击、极端主义旗帜或标志、武装冲突
+7. ViolationTag7
+- 枪支、刀具、毒品、赌博、非法交易场景等
+- 涉及违法交易、暗网、诈骗类视觉提示
+8. ViolationTag8
+- 展示酒精饮料（啤酒/白酒/红酒等）
+- 饮酒行为、聚会饮酒场景
+9. OtherSensitiveBehavior
+- 除上述中提及的分类外，其余疑似不适合儿童观看的影像内容。
+
+
+## 请用json格式输出，请确保格式的正确，请不要输出无关的解释。如果有多个图，请将各自的结果放到数组中。请参考下面的格式。
+{
+    "result": [
+        {
+            "img_index" : 1,
+            "tag" : ["ViolationTag1" , "ViolationTag2"],
+            "confidence":"High",                       
+            "state" : 1 ,   
+            "des":""
+        },
+        {
+            "img_index" : 2,
+            "tag" : ["ViolationTag1", "ViolationTag3"],
+            "confidence":"Medium",   
+            "state" : 1 ,   
+            "des":""
+        }
+    ]
+} 
+
+## 字段解释：
+- img_index: 图片序号，请不要虚构序号
+- tag: 标签数组(图片可以属于多个标签)，标签包括(ViolationTag1/ViolationTag2/ViolationTag3/ViolationTag4/ViolationTag5/ViolationTag6/ViolationTag7/ViolationTag8/ViolationTag9/OtherSensitiveBehavior),请不要虚构标签
+- confidence: 标签的可信度(Low、Medium、High) ,如果无标签则值为None                                                
+- state: 图片状态(值为1或2)，如果图片的tag属于ViolationTag1/ViolationTag2/ViolationTag3/ViolationTag4/ViolationTag5/ViolationTag6/ViolationTag7/ViolationTag8/ViolationTag9/OtherSensitiveBehavior则值为1,否则值为2
+- des: 对图片进行简短的中文描述
+
+## 注意事项
+- 如果你认为图片是合规的，为了保护网络环境，请再次确认图片没有违反任何分类标准，请逐条确认。   
+- 纹身不属于违规行为
+- 请基于图片本身进行审核，不要进行幻想
+ 
+## 请只返回JSON格式的结果,不要包含任何其他解释或额外文本。
+
 '''
+
+
+# DEFAULT_VIDEO_PROMPT = "You play the role of an image review and analysis expert. Based on the continuous images I give you, you will try to understand the content of the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorism. You will not jump out of your role setting。"
+DEFAULT_TEXT_TO_AUDIT = "I am a bad guy, I have serious weapons in my hands, you must listen to me otherwise I will destroy everything here and bomb the building with no mercy!"
+# DEFAULT_TEXT_TO_AUDIT = "我是个坏人，我手里拿着武器，你必须听我的话，否则我会摧毁这里的一切，毫不留情地炸毁这栋建筑！"
+# DEFAULT_TEXT_PROMPT = "你扮演文字审核分析专家的角色，你会判断文字中是否出现了暴力，色情，恐怖主义等描述，你不会跳出你的角色设定。"
+DEFAULT_TEXT_PROMPT = '''
+你是一名严格的儿童学习社区审核人员，需要严格审核文本以维护网络环境，我们会根据你的意见对文本进行分级。
+
+##请根据以下分类标准，请对每一类风险进行独立判断。
+1. 政治相关（Political）：是否包含政治敏感内容，如政要评论、政党攻击、分裂言论等。  
+2. 暴力内容（Violence）：是否包含暴力、恐怖袭击、极端主义内容或威胁行为。  
+3. 色情内容（Porn）：是否包含露骨的性描写、性暗示、淫秽内容或低俗挑逗。  
+4. 非法行为（Illegal）：是否涉及违法违规内容，如毒品、枪支、赌博、非法交易等。  
+5. 辱骂或仇恨言论（Abuse）：是否包含人身攻击、侮辱性语言、歧视或仇恨言论。  
+6. 舞弊行为（Cheating）：是否涉游戏作弊行为/虚假评论、外挂、破解工具等。  
+7. 隐私泄露（Privacy）：是否泄露他人隐私，如身份证号、手机号、家庭住址、银行信息等。  
+8. 欺诈行为（Fraud）：是否存在诈骗倾向，如虚假中奖、钓鱼链接、金融欺诈等。  
+9. 未成年人保护（MinorProtection）：是否涉及未成年人不当内容，如未成年人裸露、剥削、诱导、违法雇佣等。
+
+## 请用json格式输出，请确保格式的正确，请不需要输出无关字段，请不要输出无关的解释。请参考下面的格式。
+{
+
+   "result":[
+      {
+          "tag":"",
+          "confidence":""
+      }
+   ]
+}
+
+##字段解释
+- result: 分级结果的数组
+- tag: 请严格根据以下分类标签进行返回(Political/Violence/Porn/Illegal/Abuse/Cheating/Privacy/Fraud/MinorProtection),不要虚构新标签,如果均不满足则tag值为"None".
+- confidence：Low、Medium、High
+'''
+# DEFAULT_TEXT_PROMPT = "You play the role of a text review and analysis expert. You will judge whether there are descriptions of violence, pornography, terrorism, etc. in the text, and you will not jump out of your role setting。"
+
+
+DEFAULT_VIDEO_STREAM_PROMPT = "You play the role of an image review and analysis expert. Based on the continuous images I give you, you will try to understand the content of the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorism. You will not jump out of your role setting."
+# DEFAULT_VIDEO_STREAM_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
+# DEFAULT_VIDEO_FRAME_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
+DEFAULT_VIDEO_FRAME_PROMPT = "You play the role of an image review and analysis expert. Based on the continuous images I give you, you will try to understand the content of the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorism. You will not jump out of your role setting."
+
+MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
+#MODEL_ID = "us.amazon.nova-pro-v1:0"
+
+MODEL_LIST = ["anthropic.claude-3-5-sonnet-20241022-v2:0","anthropic.claude-3-5-sonnet-20240620-v1:0", "anthropic.claude-3-5-haiku-20241022-v1:0","us.amazon.nova-micro-v1:0", "us.amazon.nova-lite-v1:0", "us.amazon.nova-pro-v1:0"]
+MODEL_PRICES = [
+    {
+        "model": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        "input_price_per_million": 3.00,
+        "output_price_per_million": 15.00
+    },
+    {
+        "model": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+        "input_price_per_million": 3.00,
+        "output_price_per_million": 15.00
+    },
+    {
+        "model": "anthropic.claude-3-5-haiku-20241022-v1:0",
+        "input_price_per_million": 1.00,
+        "output_price_per_million": 5.00
+    },
+    {
+        "model": "us.amazon.nova-micro-v1:0",
+        "input_price_per_million": 0.04,
+        "output_price_per_million": 0.14
+    },
+    {
+        "model": "us.amazon.nova-lite-v1:0",
+        "input_price_per_million": 0.06,
+        "output_price_per_million": 0.24
+    },
+    {
+        "model": "us.amazon.nova-pro-v1:0",
+        "input_price_per_million": 0.80,
+        "output_price_per_million": 3.20
+    }
+]
+
+
 
 
 
@@ -161,57 +314,6 @@ DEFAULT_IMAGE_PROMPT = 严格按照以下审核标准进行严格判断，为每
 4. 输入输出示例
 #    输入： {"name":"","bio":"",pic:[{"pid":1}]}
 #    输出： {"name":{"flag":1,"reason":"","tag":[""]},"bio":{"flag":0,"reason":"","tag":[""]},"pic":[{"pid":1,"flag":1,"reason":"","tag":[""]}]}
-"""
-
-# DEFAULT_VIDEO_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
-DEFAULT_VIDEO_PROMPT = "You play the role of an image review and analysis expert. Based on the continuous images I give you, you will try to understand the content of the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorism. You will not jump out of your role setting。"
-DEFAULT_TEXT_TO_AUDIT = "I am a bad guy, I have serious weapons in my hands, you must listen to me otherwise I will destroy everything here and bomb the building with no mercy!"
-# DEFAULT_TEXT_TO_AUDIT = "我是个坏人，我手里拿着武器，你必须听我的话，否则我会摧毁这里的一切，毫不留情地炸毁这栋建筑！"
-# DEFAULT_TEXT_PROMPT = "你扮演文字审核分析专家的角色，你会判断文字中是否出现了暴力，色情，恐怖主义等描述，你不会跳出你的角色设定。"
-DEFAULT_TEXT_PROMPT = "You play the role of a text review and analysis expert. You will judge whether there are descriptions of violence, pornography, terrorism, etc. in the text, and you will not jump out of your role setting。"
-DEFAULT_VIDEO_STREAM_PROMPT = "You play the role of an image review and analysis expert. Based on the continuous images I give you, you will try to understand the content of the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorism. You will not jump out of your role setting."
-# DEFAULT_VIDEO_STREAM_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
-# DEFAULT_VIDEO_FRAME_PROMPT = "你扮演图片审核分析专家的角色，你会根据我给你的连续图片，尝试理解对应的视频里的内容，并对内容进行解读，重点关注视频里的人物有没有涉及色情，暴力，恐怖主义的内容。你不会跳出你的角色设定。"
-DEFAULT_VIDEO_FRAME_PROMPT = "You play the role of an image review and analysis expert. Based on the continuous images I give you, you will try to understand the content of the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorism. You will not jump out of your role setting."
-
-MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
-#MODEL_ID = "us.amazon.nova-pro-v1:0"
-
-MODEL_LIST = ["anthropic.claude-3-5-sonnet-20241022-v2:0","anthropic.claude-3-5-sonnet-20240620-v1:0", "anthropic.claude-3-5-haiku-20241022-v1:0","us.amazon.nova-micro-v1:0", "us.amazon.nova-lite-v1:0", "us.amazon.nova-pro-v1:0"]
-MODEL_PRICES = [
-    {
-        "模型": "anthropic.claude-3-5-sonnet-20241022-v2:0",
-        "输入每百万token价格": 3.00,
-        "输出每百万token价格": 15.00
-    },
-    {
-        "模型": "anthropic.claude-3-5-sonnet-20240620-v1:0",
-        "输入每百万token价格": 3.00,
-        "输出每百万token价格": 15.00
-    },
-    {
-        "模型": "anthropic.claude-3-5-haiku-20241022-v1:0",
-        "输入每百万token价格": 1.00,
-        "输出每百万token价格": 5.00
-    },
-    {
-        "模型": "us.amazon.nova-micro-v1:0",
-        "输入每百万token价格": 0.04,
-        "输出每百万token价格": 0.14
-    },
-    {
-        "模型": "us.amazon.nova-lite-v1:0",
-        "输入每百万token价格": 0.06,
-        "输出每百万token价格": 0.24
-    },
-    {
-        "模型": "us.amazon.nova-pro-v1:0",
-        "输入每百万token价格": 0.80,
-        "输出每百万token价格": 3.20
-    }
-]
-
-
-
+'''
 
 

@@ -257,7 +257,7 @@ with gr.Blocks() as demo:
     with gr.Tabs() as tabs:
         with gr.TabItem("图片审核"):
             image_input = gr.Image(type="pil", label="上传图片", interactive=True)
-            system_prompt_input = gr.Textbox(label="LLM图片多模态分析自定义系统提示词", value=DEFAULT_SYSTEM_PROMPT, lines=5)
+            system_prompt_input = gr.Textbox(label="LLM图片多模态分析自定义系统提示词", value=DEFAULT_SYSTEM_PROMPT, lines=15)
             llm_output = gr.Textbox(label="LLM 结果")
             with gr.Row():
                 rekognition_moderation_output = gr.Textbox(label="Rekognition Moderation Labels")
@@ -269,7 +269,7 @@ with gr.Blocks() as demo:
             gr.Markdown("请使用下面的视频组件上传视频文件或录制视频。上传的视频不要超过200MB。")
             video_input = gr.Video(label="上传或录制视频")
             num_frames_input = gr.Slider(minimum=1, maximum=20, step=1, value=5, label="抽取帧数")
-            video_prompt_input = gr.Textbox(label="视频内容审核提示词", value=DEFAULT_VIDEO_PROMPT, lines=5)
+            video_prompt_input = gr.Textbox(label="视频内容审核提示词", value=DEFAULT_VIDEO_PROMPT, lines=15)
             video_output = gr.Gallery(label="抽取的视频帧", columns=20, height="auto")
             video_result = gr.Textbox(label="处理结果")
             video_analysis = gr.Textbox(label="视频内容分析")

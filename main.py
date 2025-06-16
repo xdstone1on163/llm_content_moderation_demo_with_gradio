@@ -153,20 +153,21 @@ with gr.Blocks() as demo:
         # Left column for model selection and price display
         with gr.Column(scale=1):
             with gr.Group():
-                gr.Markdown("Select Model")
-                model_dropdown = gr.Dropdown(choices=MODEL_LIST, value="anthropic.claude-3-5-sonnet-20241022-v2:0")
+                model_dropdown = gr.Dropdown(choices=MODEL_LIST, value="anthropic.claude-3-5-sonnet-20241022-v2:0", label="Select Model")
+                model_price_display = gr.Textbox(value="", interactive=False, label="Model Price")
 
-            # with gr.Group():
-            #     gr.Markdown("Model Price")
-            #     model_price_display = gr.Textbox(value="", interactive=False)
-            #
-            #     def update_model_price(model):
-            #         for price_info in MODEL_PRICES:
-            #             if price_info["Model"] == model:
-            #                 return f"Input price per million tokens: ${price_info['Input Price Per Million Tokens']:.2f}\nOutput price per million tokens: ${price_info['Output Price Per Million Tokens']:.2f}"
-            #         return "Price information not available"
-            #
-            #     model_dropdown.change(fn=update_model_price, inputs=[model_dropdown], outputs=[model_price_display])
+                def update_model_price(model):
+                    for price_info in MODEL_PRICES:
+                        if price_info["model"] == model:
+                            return "Input price per million tokens: ${:.2f}\nOutput price per million tokens: ${:.2f}".format(
+                                price_info['input_price_per_million'], price_info['output_price_per_million'])
+                    return "Price information not available"
+
+                model_dropdown.change(fn=update_model_price, inputs=[model_dropdown], outputs=[model_price_display])
+
+                # Set initial price for the default model
+                default_model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+                demo.load(fn=lambda: update_model_price(default_model), inputs=None, outputs=[model_price_display])
         
         # Vertical line separator
         gr.HTML("""
@@ -179,19 +180,19 @@ with gr.Blocks() as demo:
 
                 # Text audit tab
                 with gr.TabItem("Text moderation"):
-                    text_input = gr.Textbox(label="Input Text to Audit", value=DEFAULT_TEXT_TO_AUDIT, lines=5)
-                    text_prompt_input = gr.Textbox(label="Text Audit Prompt", value=DEFAULT_TEXT_PROMPT, lines=5)
+                    text_input = gr.Textbox(label="Input Text to Audit", value=DEFAULT_TEXT_TO_AUDIT, lines=15)
+                    text_prompt_input = gr.Textbox(label="Text Audit Prompt", value=DEFAULT_TEXT_PROMPT, lines=15)
                     text_submit_button = gr.Button("Audit Text")
                     llm_text_output = gr.Textbox(label="LLM Analysis Results")
 
-                    with gr.Group() as comprehend_group:
-                        gr.Markdown("Comprehend Processing Results")
-                        with gr.Row():
-                            sentiment_output = gr.Textbox(label="Sentiment Analysis")
-                            entities_output = gr.Textbox(label="Entity Recognition")
-                            key_phrases_output = gr.Textbox(label="Key Phrases")
-                            pii_entities_output = gr.Textbox(label="PII Entities")
-                            toxic_content_output = gr.Textbox(label="Toxic Content Detection")
+                    # with gr.Group() as comprehend_group:
+                    #     gr.Markdown("Comprehend Processing Results")
+                    #     with gr.Row():
+                    #         sentiment_output = gr.Textbox(label="Sentiment Analysis")
+                    #         entities_output = gr.Textbox(label="Entity Recognition")
+                    #         key_phrases_output = gr.Textbox(label="Key Phrases")
+                    #         pii_entities_output = gr.Textbox(label="PII Entities")
+                    #         toxic_content_output = gr.Textbox(label="Toxic Content Detection")
 
                 # Image audit tab
                 with gr.TabItem("Image moderation"):
@@ -201,7 +202,7 @@ with gr.Blocks() as demo:
                         example_gallery = gr.Gallery(
                             value=example_images,
                             label="Click to select example image",
-                            columns=3,
+                            columns=8,
                             height=200,
                             interactive=True
                         )
@@ -221,7 +222,7 @@ with gr.Blocks() as demo:
                             return None
 
                     example_gallery.select(load_example_image, example_gallery, image_input)
-                    image_prompt_input = gr.Textbox(label="LLM Image Multi-modal Analysis Custom Prompt", value=DEFAULT_IMAGE_PROMPT, lines=5)
+                    image_prompt_input = gr.Textbox(label="LLM Image Multi-modal Analysis Custom Prompt", value=DEFAULT_IMAGE_PROMPT, lines=15)
                     llm_output = gr.Textbox(label="LLM Result")
                     
                     with gr.Group() as rekognition_group:
@@ -234,20 +235,37 @@ with gr.Blocks() as demo:
                     submit_button = gr.Button("Analyze Image")
 
                 # Video frame audit tab
-                with gr.TabItem("Static video moderation"):
+                with gr.TabItem("Video moderation"):
                     gr.Markdown("### Example Videos")
                     example_videos = get_example_files('videos')
                     with gr.Row():
                         example_gallery_videos = gr.Gallery(
                             value=example_videos,
-                            label="Click to select example video",
+                            label="Click to select an example video",
                             columns=3,
-                            height=200,
+                            height=300,
                             interactive=True
                         )
                     
-                    gr.Markdown("Please use the video component below to upload or record a video. Uploaded videos should not exceed 200MB.")
-                    video_input = gr.Video(label="Upload or Record Video", sources=["upload"])
+                    gr.Markdown("Please use the video component below to upload a video file or record a video. The uploaded video should not exceed 200MB.")
+                    video_input = gr.Video(label="Upload or Record Video")
+
+                    with gr.Row():
+                        analysis_method = gr.Radio(
+                            choices=["Process Video with Frames", "Understand Video Directly"],
+                            value="Process Video with Frames",
+                            label="Analysis Method",
+                            interactive=True
+                        )
+
+                    # Add specific model selection for direct video understanding
+                    nova_models = ["us.amazon.nova-lite-v1:0", "us.amazon.nova-pro-v1:0"]  # Nova models that support video
+                    direct_video_model = gr.Dropdown(
+                        choices=nova_models,
+                        value=nova_models[0],
+                        label="Select Nova Model (for direct video understanding)",
+                        visible=False  # Initially hidden since default is frame-based
+                    )
 
                     def load_example_video(evt: gr.SelectData, gallery):
                         try:
@@ -262,36 +280,72 @@ with gr.Blocks() as demo:
                             return None
 
                     example_gallery_videos.select(load_example_video, example_gallery_videos, video_input)
-                    num_frames_input = gr.Slider(minimum=1, maximum=20, step=1, value=5, label="Number of Frames")
-                    video_prompt_input = gr.Textbox(label="Video Content Audit Prompt", value=DEFAULT_VIDEO_PROMPT, lines=5)
-                    video_output = gr.Gallery(label="Extracted Video Frames", columns=20, height="auto")
+
+                    # Add frame slider with conditional visibility
+                    num_frames_input = gr.Slider(
+                        minimum=1,
+                        maximum=20,
+                        step=1,
+                        value=5,
+                        label="Number of frames to extract",
+                        visible=True  # Initially visible since default is frame-based
+                    )
+
+                    video_prompt_input = gr.Textbox(label="Video Content Audit Prompt", value=DEFAULT_VIDEO_PROMPT, lines=15)
+
+                    with gr.Column(visible=True) as frame_based_components:
+                        video_output = gr.Gallery(
+                            label="Extracted Video Frames",
+                            columns=20,
+                            height="auto"
+                        )
+
                     video_result = gr.Textbox(label="Processing Result")
                     video_analysis = gr.Textbox(label="Video Content Analysis")
                     video_submit_button = gr.Button("Process Video")
 
+                    def update_component_visibility(method):
+                        is_frame_based = (method == "Process Video with Frames")
+                        return [
+                            gr.update(visible=is_frame_based),  # frame slider
+                            gr.update(visible=not is_frame_based),  # nova model dropdown
+                            gr.update(visible=is_frame_based),  # general model dropdown
+                            gr.update(value=""),  # clear processing result
+                            gr.update(value=""),  # clear video analysis
+                            gr.update(visible=is_frame_based),  # frame based components
+                        ]
+
+                    analysis_method.change(
+                        fn=update_component_visibility,
+                        inputs=[analysis_method],
+                        outputs=[num_frames_input, direct_video_model, model_dropdown,
+                                video_result, video_analysis, frame_based_components]
+                    )
+
                 # Video stream audit tab
-                with gr.TabItem("Video stream moderation"):
-                    gr.Markdown("Use webcam to capture video stream")
-                    video_stream_output = gr.Image(label="Capture Video Stream from Webcam", sources=["webcam"])
-                    
-                    with gr.Row():
-                        capture_rate_input = gr.Slider(minimum=1, maximum=10, step=1, value=1, label="Capture Rate (seconds)")
-                        start_capture_button = gr.Button("Start Capture")
-                    
-                    frames_to_analyze = gr.Slider(minimum=1, maximum=10, step=1, value=3, label="Frames to Analyze", interactive=True)
-                    analysis_prompt_input = gr.Textbox(label="Analysis Prompt", value=DEFAULT_VIDEO_FRAME_PROMPT, lines=2)
-                    analysis_frequency = gr.Slider(minimum=1, maximum=10, step=1, value=5, label="Analysis Frequency (seconds)", interactive=True)
-                    
-                    start_analysis_button = gr.Button("Start Analysis")
-                    stop_analysis_button = gr.Button("Stop Analysis")
-                    stop_capture_button = gr.Button("Stop Capture")
+                # with gr.TabItem("Video Stream Audit"):
+                #     gr.Markdown("Use camera to capture video stream")
+                #     video_stream_output = gr.Image(label="Capture video stream from camera", sources=["webcam"])
+                #
+                #     with gr.Row():
+                #         capture_rate_input = gr.Slider(minimum=1, maximum=10, step=1, value=1, label="Frame capture rate (seconds)")
+                #         start_capture_button = gr.Button("Start Capturing")
+                #
+                #     frames_to_analyze = gr.Slider(minimum=1, maximum=10, step=1, value=3, label="Number of frames to analyze each time", interactive=True)
+                #     analysis_prompt_input = gr.Textbox(label="Analysis prompt", value=DEFAULT_VIDEO_FRAME_PROMPT, lines=2)
+                #     analysis_frequency = gr.Slider(minimum=1, maximum=10, step=1, value=5, label="Analysis frequency (seconds)", interactive=True)
+                #
+                #     start_analysis_button = gr.Button("Start Analysis")
+                #     stop_analysis_button = gr.Button("Stop Analysis")
+                #     stop_capture_button = gr.Button("Stop Capturing")
+                #
+                #     gr.Markdown("Analysis Status")
+                #     current_status_html = gr.HTML(value="<div style='height:300px; overflow-y:auto; font-family:monospace; white-space:pre-wrap;'>No logs yet...</div>")
+                #
+                #     gr.Markdown("Captured Frames")
+                #     captured_frames_gallery = gr.Gallery(label="Captured Frames", columns=5, height="auto")
+                #     captured_frames_output = gr.Textbox(label="Save path for captured frames")
 
-                    gr.Markdown("Analysis Status")
-                    current_status_html = gr.HTML(value="<div style='height:300px; overflow-y:auto; font-family:monospace; white-space:pre-wrap;'>No logs yet...</div>")
-
-                    gr.Markdown("Captured Frames")
-                    captured_frames_gallery = gr.Gallery(label="Captured Frames", columns=5, height="auto")
-                    captured_frames_output = gr.Textbox(label="Captured Frames Save Path")
 
                 # Audio transcription tab
                 with gr.TabItem("Audio moderation"):
@@ -363,20 +417,20 @@ with gr.Blocks() as demo:
                             return image
                         return "No images uploaded"
 
-                    checkbox_group = gr.CheckboxGroup(
-                        choices=["Content moderation", "Face moderation"],
-                        label="Please select the moderation type",
-                        info="You can select one or more"
-                    )
-
-                    image_input_live = gr.Image(label="Upload pictures", visible=False)
-                    image_input_live.change(fn=upload_face_image, inputs=image_input_live)
-
-                    checkbox_group.change(
-                        fn=update_visibility,
-                        inputs=[checkbox_group],
-                        outputs=[image_input_live]
-                    )
+                    # checkbox_group = gr.CheckboxGroup(
+                    #     choices=["Content moderation", "Face moderation"],
+                    #     label="Please select the moderation type",
+                    #     info="You can select one or more"
+                    # )
+                    #
+                    # image_input_live = gr.Image(label="Upload pictures", visible=False)
+                    # image_input_live.change(fn=upload_face_image, inputs=image_input_live)
+                    #
+                    # checkbox_group.change(
+                    #     fn=update_visibility,
+                    #     inputs=[checkbox_group],
+                    #     outputs=[image_input_live]
+                    # )
 
                     gr.Markdown("Please enter the video url")
 
@@ -387,88 +441,92 @@ with gr.Blocks() as demo:
 
                     with gr.Row():
                         query_btn = gr.Button("Real-time status query")
-                        stop_btn = gr.Button("Stop status query")
+                    #     stop_btn = gr.Button("Stop status query")
 
                     status_output = gr.HTML(label="Query Result")
 
                     live_moderation_manager = LiveModerationManager()
 
-                    def submit_video(url, checkbox_groups, image):
-                        yield live_moderation_manager.submit_video(url, checkbox_groups, image)
+                    # def submit_video(url, checkbox_groups, image):
+                    #     yield live_moderation_manager.submit_video(url, checkbox_groups, image)
+                    def submit_video(url):
+                        yield live_moderation_manager.submit_video(url)
+
 
                     def query_status(url):
                         live_moderation_manager.stop_query()
                         yield from live_moderation_manager.query_status(url)
 
-                    submit_btn.click(fn=submit_video, inputs=[video_url, checkbox_group, image_input_live])
+                    # submit_btn.click(fn=submit_video, inputs=[video_url, checkbox_group, image_input_live])
+                    submit_btn.click(fn=submit_video, inputs=[video_url])
                     query_btn.click(fn=query_status, inputs=video_url, outputs=status_output)
-                    stop_btn.click(fn=live_moderation_manager.stop_query)
+                    # stop_btn.click(fn=live_moderation_manager.stop_query)
 
-            def start_capture(capture_rate):
-                global stop_capture_flag, capture_thread
-                
-                # Clear the captured frames directory
-                if os.path.exists(FRAME_STORAGE_DIR):
-                    shutil.rmtree(FRAME_STORAGE_DIR)
-                os.makedirs(FRAME_STORAGE_DIR)
-                
-                log_queue.put("Starting frame capture...")
-                stop_capture_flag = threading.Event()
-                capture_thread = start_frame_capture(stop_capture_flag)
-                return (
-                    gr.update(value="Frame Capture Started"),
-                    gr.update(value="Start Analysis"),
-                    gr.update(value="Stop Analysis"),
-                    gr.update(value="Stop Capture"),
-                    gr.update(value=os.path.abspath(FRAME_STORAGE_DIR))
-                )
-
-            def stop_capture():
-                global capture_thread, stop_capture_flag
-                if stop_capture_flag is not None:
-                    stop_frame_capture(capture_thread, stop_capture_flag)
-                    captured_frames = get_captured_frames()
-                    capture_thread = None
-                    stop_capture_flag = None
-                    log_queue.put("Frame capture stopped")
-                    return (
-                        gr.update(value="Start Capture"),
-                        gr.update(value="Start Analysis"),
-                        gr.update(value="Stop Analysis"),
-                        gr.update(value="Frame Capture Stopped"),
-                        gr.update(value=captured_frames)
-                    )
-                return (
-                    gr.update(value="Start Capture"),
-                    gr.update(value="Start Analysis"),
-                    gr.update(value="Stop Analysis"),
-                    gr.update(value="Not Capturing"),
-                    gr.update(value=[])
-                )
-
-            start_capture_button.click(
-                fn=start_capture,
-                inputs=[capture_rate_input],
-                outputs=[start_capture_button, start_analysis_button, stop_analysis_button, stop_capture_button, captured_frames_output]
-            )
-            start_analysis_button.click(
-                fn=start_analysis,
-                inputs=[frames_to_analyze, analysis_prompt_input, capture_rate_input, analysis_frequency, model_dropdown],
-                outputs=[start_analysis_button, stop_analysis_button, start_capture_button, stop_capture_button]
-            )
-            stop_analysis_button.click(
-                fn=stop_analysis,
-                inputs=[],
-                outputs=[start_analysis_button, stop_analysis_button, start_capture_button, stop_capture_button]
-            )
-            stop_capture_button.click(
-                fn=stop_capture,
-                inputs=[],
-                outputs=[start_capture_button, start_analysis_button, stop_analysis_button, stop_capture_button, captured_frames_gallery]
-            )
+            # def start_capture(capture_rate):
+            #     global stop_capture_flag, capture_thread
+            #
+            #     # Clear the captured frames directory
+            #     if os.path.exists(FRAME_STORAGE_DIR):
+            #         shutil.rmtree(FRAME_STORAGE_DIR)
+            #     os.makedirs(FRAME_STORAGE_DIR)
+            #
+            #     log_queue.put("Starting frame capture...")
+            #     stop_capture_flag = threading.Event()
+            #     capture_thread = start_frame_capture(stop_capture_flag)
+            #     return (
+            #         gr.update(value="Frame Capture Started"),
+            #         gr.update(value="Start Analysis"),
+            #         gr.update(value="Stop Analysis"),
+            #         gr.update(value="Stop Capture"),
+            #         gr.update(value=os.path.abspath(FRAME_STORAGE_DIR))
+            #     )
+            #
+            # def stop_capture():
+            #     global capture_thread, stop_capture_flag
+            #     if stop_capture_flag is not None:
+            #         stop_frame_capture(capture_thread, stop_capture_flag)
+            #         captured_frames = get_captured_frames()
+            #         capture_thread = None
+            #         stop_capture_flag = None
+            #         log_queue.put("Frame capture stopped")
+            #         return (
+            #             gr.update(value="Start Capture"),
+            #             gr.update(value="Start Analysis"),
+            #             gr.update(value="Stop Analysis"),
+            #             gr.update(value="Frame Capture Stopped"),
+            #             gr.update(value=captured_frames)
+            #         )
+            #     return (
+            #         gr.update(value="Start Capture"),
+            #         gr.update(value="Start Analysis"),
+            #         gr.update(value="Stop Analysis"),
+            #         gr.update(value="Not Capturing"),
+            #         gr.update(value=[])
+            #     )
+            #
+            # start_capture_button.click(
+            #     fn=start_capture,
+            #     inputs=[capture_rate_input],
+            #     outputs=[start_capture_button, start_analysis_button, stop_analysis_button, stop_capture_button, captured_frames_output]
+            # )
+            # start_analysis_button.click(
+            #     fn=start_analysis,
+            #     inputs=[frames_to_analyze, analysis_prompt_input, capture_rate_input, analysis_frequency, model_dropdown],
+            #     outputs=[start_analysis_button, stop_analysis_button, start_capture_button, stop_capture_button]
+            # )
+            # stop_analysis_button.click(
+            #     fn=stop_analysis,
+            #     inputs=[],
+            #     outputs=[start_analysis_button, stop_analysis_button, start_capture_button, stop_capture_button]
+            # )
+            # stop_capture_button.click(
+            #     fn=stop_capture,
+            #     inputs=[],
+            #     outputs=[start_capture_button, start_analysis_button, stop_analysis_button, stop_capture_button, captured_frames_gallery]
+            # )
 
             # Continuous updates
-            demo.load(continuous_update, inputs=None, outputs=[current_status_html])
+            # demo.load(continuous_update, inputs=None, outputs=[current_status_html])
 
             def process_image_wrapper(image, prompt, model):
                 # Process the image and get results
@@ -485,9 +543,48 @@ with gr.Blocks() as demo:
                          rekognition_faces_output]
             )
 
+            def process_video_wrapper(video, num_frames, prompt, general_model, nova_model, method):
+                try:
+                    # Use appropriate model based on the selected method
+                    selected_model = nova_model if method == "Understand Video Directly" else general_model
+                    analysis_method = "direct" if method == "Understand Video Directly" else "frame"
+
+                    # Handle video path based on input type
+                    video_path = None
+                    if isinstance(video, str):
+                        # Example video or already a path
+                        video_path = video
+                    elif video is not None:
+                        # Uploaded video through Gradio UI
+                        video_path = video.name if hasattr(video, 'name') else None
+
+                    if video_path is None:
+                        return None, "No video file provided", None
+
+                    # Check file size
+                    file_size = os.path.getsize(video_path)
+                    max_size = 25 * 1024 * 1024  # 25 MB limit for direct understanding
+                    logging.info(f"Video file size: {file_size / (1024 * 1024):.2f} MB")
+
+                    if method == "Understand Video Directly" and file_size > max_size:
+                        error_msg = f"Video file size ({file_size / (1024 * 1024):.2f} MB) exceeds the maximum allowed size (25 MB) for direct video understanding. Please use a smaller video file or try the frame-based analysis method."
+                        logging.error(error_msg)
+                        return None, error_msg, None
+
+                    frames, result_msg, analysis = process_video(video_path, num_frames, prompt, selected_model, analysis_method)
+
+                    # For direct understanding, don't update the video output gallery
+                    if method == "Understand Video Directly":
+                        return None, result_msg, analysis
+                    return frames, result_msg, analysis
+
+                except Exception as e:
+                    logging.error(f"Error in process_video_wrapper: {str(e)}")
+                    return None, f"Error processing video: {str(e)}", None
+
             video_submit_button.click(
-                fn=process_video,
-                inputs=[video_input, num_frames_input, video_prompt_input, model_dropdown],
+                fn=process_video_wrapper,
+                inputs=[video_input, num_frames_input, video_prompt_input, model_dropdown, direct_video_model, analysis_method],
                 outputs=[video_output, video_result, video_analysis]
             )
 
@@ -495,10 +592,15 @@ with gr.Blocks() as demo:
                 fn=process_text,
                 inputs=[text_input, text_prompt_input, model_dropdown],
                 outputs=[llm_text_output, 
-                         sentiment_output, entities_output, 
-                         key_phrases_output, pii_entities_output, 
-                         toxic_content_output]
+                         # sentiment_output, entities_output,
+                         # key_phrases_output, pii_entities_output,
+                         # toxic_content_output
+                         ]
             )
 
 demo.queue()
-demo.launch(share=True)
+# demo.launch(share=True)
+# demo.launch(server_name="0.0.0.0", server_port=7862, share=True)
+demo.launch(server_name="0.0.0.0", server_port=7862, share=False)
+
+# gr.Interface(...).launch(server_name="0.0.0.0", server_port=7862)
