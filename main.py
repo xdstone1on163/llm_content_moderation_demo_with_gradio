@@ -229,8 +229,26 @@ with gr.Blocks() as demo:
                             interactive=True
                         )
                     
-                    gr.Markdown("Please use the video component below to upload a video file or record a video. The uploaded video should not exceed 200MB.")
+                    gr.Markdown("Please use the video component below to upload a video file or record a video. The uploaded video should not exceed 200MB. Alternatively, you can specify an S3 path for a video.")
+                    
+                    # Video source selection
+                    video_source = gr.Radio(
+                        choices=["Upload Video", "S3 Path"],
+                        value="Upload Video",
+                        label="Video Source",
+                        interactive=True
+                    )
+                    
+                    # Video upload component
                     video_input = gr.Video(label="Upload or Record Video")
+                    
+                    # S3 path input
+                    s3_path_input = gr.Textbox(
+                        label="S3 Video Path (format: s3://bucket-name/path/to/video.mp4)",
+                        placeholder="s3://my-bucket/videos/example.mp4",
+                        visible=False,
+                        info="Note: The model will access the video directly from S3. Make sure your AWS account has access to this S3 bucket and the video is in MP4 format."
+                    )
 
                     with gr.Row():
                         analysis_method = gr.Radio(
@@ -297,11 +315,35 @@ with gr.Blocks() as demo:
                             gr.update(visible=is_frame_based),  # frame based components
                         ]
                     
+                    def update_video_source_ui(source):
+                        if source == "Upload Video":
+                            return [
+                                gr.update(visible=True, interactive=True),  # video_input
+                                gr.update(visible=False),  # s3_path_input
+                                gr.update(visible=True, interactive=True),  # analysis_method
+                                gr.update(visible=True),  # num_frames_input (conditional visibility)
+                                gr.update(visible=False)   # direct_video_model (conditional visibility)
+                            ]
+                        else:  # S3 Path
+                            return [
+                                gr.update(visible=False, interactive=False),  # video_input
+                                gr.update(visible=True),  # s3_path_input
+                                gr.update(visible=True, interactive=False, value="Understand Video Directly"),  # analysis_method
+                                gr.update(visible=False),  # num_frames_input
+                                gr.update(visible=True)    # direct_video_model
+                            ]
+                    
                     analysis_method.change(
                         fn=update_component_visibility,
                         inputs=[analysis_method],
                         outputs=[num_frames_input, direct_video_model, model_dropdown, 
                                 video_result, video_analysis, frame_based_components]
+                    )
+                    
+                    video_source.change(
+                        fn=update_video_source_ui,
+                        inputs=[video_source],
+                        outputs=[video_input, s3_path_input, analysis_method, num_frames_input, direct_video_model]
                     )
 
                 # Video stream audit tab
@@ -435,7 +477,7 @@ with gr.Blocks() as demo:
                          rekognition_faces_output]
             )
 
-            def process_video_wrapper(video, num_frames, prompt, general_model, nova_model, method):
+            def process_video_wrapper(video, s3_path, num_frames, prompt, general_model, nova_model, method, source):
                 try:
                     # Use appropriate model based on the selected method
                     selected_model = nova_model if method == "Understand Video Directly" else general_model
@@ -443,7 +485,16 @@ with gr.Blocks() as demo:
                     
                     # Handle video path based on input type
                     video_path = None
-                    if isinstance(video, str):
+                    is_s3_path = False
+                    
+                    if source == "S3 Path":
+                        # Use S3 path, force direct method
+                        video_path = s3_path
+                        is_s3_path = True
+                        analysis_method = "direct"
+                        selected_model = nova_model
+                        logging.info(f"Using S3 path: {video_path}")
+                    elif isinstance(video, str):
                         # Example video or already a path
                         video_path = video
                     elif video is not None:
@@ -453,20 +504,21 @@ with gr.Blocks() as demo:
                     if video_path is None:
                         return None, "No video file provided", None
                     
-                    # Check file size
-                    file_size = os.path.getsize(video_path)
-                    max_size = 25 * 1024 * 1024  # 25 MB limit for direct understanding
-                    logging.info(f"Video file size: {file_size / (1024 * 1024):.2f} MB")
+                    # Check file size (only for local files)
+                    if not is_s3_path and analysis_method == "direct":
+                        file_size = os.path.getsize(video_path)
+                        max_size = 25 * 1024 * 1024  # 25 MB limit for direct understanding
+                        logging.info(f"Video file size: {file_size / (1024 * 1024):.2f} MB")
+                        
+                        if file_size > max_size:
+                            error_msg = f"Video file size ({file_size / (1024 * 1024):.2f} MB) exceeds the maximum allowed size (25 MB) for direct video understanding. Please use a smaller video file or try the frame-based analysis method."
+                            logging.error(error_msg)
+                            return None, error_msg, None
                     
-                    if method == "Understand Video Directly" and file_size > max_size:
-                        error_msg = f"Video file size ({file_size / (1024 * 1024):.2f} MB) exceeds the maximum allowed size (25 MB) for direct video understanding. Please use a smaller video file or try the frame-based analysis method."
-                        logging.error(error_msg)
-                        return None, error_msg, None
-                    
-                    frames, result_msg, analysis = process_video(video_path, num_frames, prompt, selected_model, analysis_method)
+                    frames, result_msg, analysis = process_video(video_path, num_frames, prompt, selected_model, analysis_method, is_s3_path)
                     
                     # For direct understanding, don't update the video output gallery
-                    if method == "Understand Video Directly":
+                    if analysis_method == "direct":
                         return None, result_msg, analysis
                     return frames, result_msg, analysis
                     
@@ -476,7 +528,7 @@ with gr.Blocks() as demo:
 
             video_submit_button.click(
                 fn=process_video_wrapper,
-                inputs=[video_input, num_frames_input, video_prompt_input, model_dropdown, direct_video_model, analysis_method],
+                inputs=[video_input, s3_path_input, num_frames_input, video_prompt_input, model_dropdown, direct_video_model, analysis_method, video_source],
                 outputs=[video_output, video_result, video_analysis]
             )
 

@@ -104,18 +104,12 @@ def analyze_video_content(frames, prompt, model_id):
     
     return analysis
 
-def video_direct_understanding(video_path, prompt, model_id):
+def video_direct_understanding(video_path, prompt, model_id, is_s3_path=False):
     """Analyze video content directly using AWS Bedrock Nova model"""
     if video_path is None:
-        return "Please upload a video first", None
+        return "Please upload a video or provide an S3 path", None
 
     try:
-        # Read video file as bytes and encode to base64
-        with open(video_path, 'rb') as video_file:
-            binary_data = video_file.read()
-            base_64_encoded_data = base64.b64encode(binary_data)
-            base64_string = base_64_encoded_data.decode('utf-8')
-        
         # Define system prompts
         system_list = [
             {
@@ -127,19 +121,47 @@ def video_direct_understanding(video_path, prompt, model_id):
         message_list = [
             {
                 "role": "user",
-                "content": [
-                    {
-                        "video": {
-                            "format": "mp4",
-                            "source": {"bytes": base64_string}
-                        }
-                    },
-                    {
-                        "text": prompt
-                    }
-                ]
+                "content": []
             }
         ]
+        
+        # For S3 paths, use the s3Location format
+        if is_s3_path:
+            # Parse S3 path to extract bucket and key
+            # Expected format: s3://bucket-name/path/to/video.mp4
+            if video_path.startswith("s3://"):
+                # Use S3 location format as per AWS documentation
+                message_list[0]["content"].append({
+                    "video": {
+                        "format": "mp4",
+                        "source": {
+                            "s3Location": {
+                                "uri": video_path
+                            }
+                        }
+                    }
+                })
+                logging.info(f"Using S3 video path: {video_path}")
+            else:
+                raise ValueError(f"Invalid S3 path format: {video_path}. S3 path must start with 's3://'")
+        else:
+            # Read local video file as bytes and encode to base64
+            with open(video_path, 'rb') as video_file:
+                binary_data = video_file.read()
+                base_64_encoded_data = base64.b64encode(binary_data)
+                base64_string = base_64_encoded_data.decode('utf-8')
+            
+            message_list[0]["content"].append({
+                "video": {
+                    "format": "mp4",
+                    "source": {"bytes": base64_string}
+                }
+            })
+        
+        # Add prompt text
+        message_list[0]["content"].append({
+            "text": prompt
+        })
         
         # Configure inference parameters
         inf_params = {
@@ -179,17 +201,17 @@ def video_direct_understanding(video_path, prompt, model_id):
         logging.error(f"Error in direct video understanding: {str(e)}")
         return f"Error processing video: {str(e)}", None
 
-def process_video(video, num_frames, prompt, model_id, analysis_method="frame"):
+def process_video(video, num_frames, prompt, model_id, analysis_method="frame", is_s3_path=False):
     if video is None:
-        return None, "Please upload a video first", None
+        return None, "Please upload a video or provide an S3 path", None
 
     try:
-        if analysis_method == "frame":
+        if analysis_method == "frame" and not is_s3_path:
             frames = extract_frames(video, int(num_frames))
             analysis = analyze_video_content(frames, prompt, model_id)
             return frames, f"Successfully extracted {len(frames)} frames and completed content analysis", analysis
-        else:  # direct
-            result_message, analysis = video_direct_understanding(video, prompt, model_id)
+        else:  # direct or S3 path
+            result_message, analysis = video_direct_understanding(video, prompt, model_id, is_s3_path)
             return None, result_message, analysis
     except Exception as e:
         logging.error(f"Error processing video: {str(e)}")
