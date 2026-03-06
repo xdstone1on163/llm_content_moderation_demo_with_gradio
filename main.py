@@ -395,6 +395,10 @@ with gr.Blocks() as demo:
                             pii_entities_output = gr.Textbox(label="Personal Sensitive Information")
                             toxic_content_output = gr.Textbox(label="Harmful Content Detection")
 
+                    with gr.Row():
+                        text_llm_time = gr.Textbox(label="LLM Processing Time", interactive=False)
+                        text_comprehend_time = gr.Textbox(label="Comprehend Processing Time", interactive=False)
+
                 # Audio transcription tab
                 with gr.TabItem("Audio/Video Transcription"):
                     gr.Markdown("Please use the component below to upload an audio/video file, record audio, or select a sample audio. Audio extraction from video files is supported.")
@@ -555,13 +559,20 @@ with gr.Blocks() as demo:
                 outputs=[video_output, video_result, video_analysis, rekognition_video_output, video_llm_time, video_rek_time]
             )
 
+            def process_text_wrapper(text, prompt, model):
+                results = process_text(text, prompt, model)
+                llm_analysis, sentiment, entities, key_phrases, pii_entities, toxic_content, llm_elapsed, comprehend_elapsed = results
+                return (llm_analysis, sentiment, entities, key_phrases, pii_entities, toxic_content,
+                        f"{llm_elapsed:.2f}s", f"{comprehend_elapsed:.2f}s")
+
             text_submit_button.click(
-                fn=process_text,
+                fn=process_text_wrapper,
                 inputs=[text_input, text_prompt_input, model_dropdown],
-                outputs=[llm_text_output, 
-                         sentiment_output, entities_output, 
-                         key_phrases_output, pii_entities_output, 
-                         toxic_content_output]
+                outputs=[llm_text_output,
+                         sentiment_output, entities_output,
+                         key_phrases_output, pii_entities_output,
+                         toxic_content_output,
+                         text_llm_time, text_comprehend_time]
             )
 
 demo.queue(default_concurrency_limit=5)

@@ -180,9 +180,14 @@ def analyze_text_with_llm(text, prompt, model_id):
     return analysis
 
 def process_text(text, prompt, model_id):
+    import time
+
+    llm_start = time.time()
     llm_analysis = analyze_text_with_llm(text, prompt, model_id)
-    
-    # Unpack the Comprehend analysis results in the correct order
+    llm_elapsed = time.time() - llm_start
+
+    comprehend_start = time.time()
     sentiment, entities, key_phrases, pii_entities, toxic_content = analyze_text_with_comprehend(text)
-    
-    return llm_analysis, sentiment, entities, key_phrases, pii_entities, toxic_content
+    comprehend_elapsed = time.time() - comprehend_start
+
+    return llm_analysis, sentiment, entities, key_phrases, pii_entities, toxic_content, llm_elapsed, comprehend_elapsed
