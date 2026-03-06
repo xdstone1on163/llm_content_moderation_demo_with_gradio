@@ -3,14 +3,8 @@ import os
 import tempfile
 import io
 from PIL import Image
-import utils
-import config
-import json
-from aws_clients import invoke_model, converse_with_model
-import cv2
+from aws_clients import converse_with_model
 import logging
-import base64
-import time
 
 def extract_frames(video_path, num_frames):
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -100,97 +94,55 @@ def analyze_video_content(frames, prompt, model_id):
     return analysis
 
 def video_direct_understanding(video_path, prompt, model_id, is_s3_path=False):
-    """Analyze video content directly using AWS Bedrock Nova model"""
+    """Analyze video content directly using AWS Bedrock Converse API"""
     if video_path is None:
         return "Please upload a video or provide an S3 path", None
 
     try:
-        # Define system prompts
-        system_list = [
-            {
-                "text": "You are an expert video content analyzer. Analyze the video content and provide detailed insights."
-            }
+        system_prompts = [
+            {"text": "You are an expert video content analyzer. Analyze the video content and provide detailed insights."}
         ]
-        
-        # Define message list with video and prompt
-        message_list = [
-            {
-                "role": "user",
-                "content": []
-            }
-        ]
-        
-        # For S3 paths, use the s3Location format
+
+        content = []
+
         if is_s3_path:
-            # Parse S3 path to extract bucket and key
-            # Expected format: s3://bucket-name/path/to/video.mp4
-            if video_path.startswith("s3://"):
-                # Use S3 location format as per AWS documentation
-                message_list[0]["content"].append({
-                    "video": {
-                        "format": "mp4",
-                        "source": {
-                            "s3Location": {
-                                "uri": video_path
-                            }
-                        }
-                    }
-                })
-                logging.info(f"Using S3 video path: {video_path}")
-            else:
+            if not video_path.startswith("s3://"):
                 raise ValueError(f"Invalid S3 path format: {video_path}. S3 path must start with 's3://'")
-        else:
-            # Read local video file as bytes and encode to base64
-            with open(video_path, 'rb') as video_file:
-                binary_data = video_file.read()
-                base_64_encoded_data = base64.b64encode(binary_data)
-                base64_string = base_64_encoded_data.decode('utf-8')
-            
-            message_list[0]["content"].append({
+            content.append({
                 "video": {
                     "format": "mp4",
-                    "source": {"bytes": base64_string}
+                    "source": {
+                        "s3Location": {"uri": video_path}
+                    }
                 }
             })
-        
-        # Add prompt text
-        message_list[0]["content"].append({
-            "text": prompt
-        })
-        
-        # Configure inference parameters
-        inf_params = {
-            "maxTokens": 2000,
-            "temperature": 0.3,
-            "topP": 0.9,
-            "topK": 20
-        }
-        
-        # Prepare the request body
-        native_request = {
-            "schemaVersion": "messages-v1",
-            "messages": message_list,
-            "system": system_list,
-            "inferenceConfig": inf_params
-        }
-        
+            logging.info(f"Using S3 video path: {video_path}")
+        else:
+            with open(video_path, 'rb') as video_file:
+                binary_data = video_file.read()
+            content.append({
+                "video": {
+                    "format": "mp4",
+                    "source": {"bytes": binary_data}
+                }
+            })
+
+        content.append({"text": prompt})
+
+        messages = [{"role": "user", "content": content}]
+
         try:
-            # Invoke the model
-            response = invoke_model(
-                body=json.dumps(native_request),
-                contentType="application/json",
-                accept="application/json",
-                modelId=model_id
+            analysis = converse_with_model(
+                model_id=model_id,
+                system_prompts=system_prompts,
+                messages=messages,
+                max_tokens=2000,
+                temperature=0.3
             )
-            
-            # Parse the response
-            model_response = json.loads(response.get('body').read())
-            analysis = model_response["output"]["message"]["content"][0]["text"]
-            
         except Exception as e:
             logging.error(f"Video direct analysis error: {str(e)}")
             analysis = "Video content analysis result unavailable"
-        
+
         return "Successfully completed direct video analysis", analysis
     except Exception as e:
         logging.error(f"Error in direct video understanding: {str(e)}")
@@ -211,7 +163,3 @@ def process_video(video, num_frames, prompt, model_id, analysis_method="frame", 
     except Exception as e:
         logging.error(f"Error processing video: {str(e)}")
         return None, f"Error processing video: {str(e)}", None
-
-def process_video_stream(analysis_prompt, frame_interval):
-    cap = cv2.VideoCapture(0)  # Open the default camera
-    return cap, analysis_prompt, frame_interval

@@ -63,6 +63,10 @@ DEFAULT_TEXT_PROMPT = "You are playing the role of a content review and analysis
 DEFAULT_VIDEO_STREAM_PROMPT = "You are playing the role of an image review analysis expert. Based on the consecutive images I give you, you will try to understand the content in the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorist content. You will not deviate from your role setting."
 DEFAULT_VIDEO_FRAME_PROMPT = "You are playing the role of an image review analysis expert. Based on the consecutive images I give you, you will try to understand the content in the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorist content. You will not deviate from your role setting."
 
+REKOGNITION_VIDEO_MIN_CONFIDENCE = 60.0
+REKOGNITION_POLL_INTERVAL = 5
+REKOGNITION_POLL_TIMEOUT = 300
+
 MODEL_ID = "global.anthropic.claude-sonnet-4-6"
 
 MODEL_LIST = [

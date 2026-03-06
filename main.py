@@ -1,9 +1,11 @@
 import gradio as gr
 from image_audit import process_image
 from video_audit import process_video, analyze_video_content
+from video_rekognition import run_video_moderation
 from text_audit import process_text
 from audio_audit import create_audio_interface
 from config import DEFAULT_SYSTEM_PROMPT, DEFAULT_IMAGE_PROMPT, DEFAULT_VIDEO_PROMPT, DEFAULT_TEXT_PROMPT, DEFAULT_VIDEO_FRAME_PROMPT, DEFAULT_TEXT_TO_AUDIT, MODEL_LIST, MODEL_PRICES
+import concurrent.futures
 import threading
 import time
 import os
@@ -193,14 +195,18 @@ with gr.Blocks() as demo:
                     example_gallery.select(load_example_image, example_gallery, image_input)
                     image_prompt_input = gr.Textbox(label="LLM Image Multimodal Analysis Custom Prompt", value=DEFAULT_IMAGE_PROMPT, lines=5)
                     llm_output = gr.Textbox(label="LLM Result")
-                    
+
                     with gr.Group() as rekognition_group:
                         gr.Markdown("Rekognition Audit Results")
                         with gr.Row():
                             rekognition_moderation_output = gr.Textbox(label="Moderation Labels")
                             rekognition_labels_output = gr.Textbox(label="Detection Labels")
                             rekognition_faces_output = gr.Textbox(label="Detected Faces")
-                    
+
+                    with gr.Row():
+                        image_llm_time = gr.Textbox(label="LLM Processing Time", interactive=False)
+                        image_rek_time = gr.Textbox(label="Rekognition Processing Time", interactive=False)
+
                     submit_button = gr.Button("Analyze Image")
 
                 # Video frame audit tab
@@ -289,6 +295,17 @@ with gr.Blocks() as demo:
                     
                     video_result = gr.Textbox(label="Processing Result")
                     video_analysis = gr.Textbox(label="Video Content Analysis")
+
+                    with gr.Group():
+                        gr.Markdown("Rekognition Video Content Moderation Results")
+                        rekognition_video_output = gr.Textbox(
+                            label="Rekognition Video Moderation Labels", lines=10, interactive=False
+                        )
+
+                    with gr.Row():
+                        video_llm_time = gr.Textbox(label="LLM Processing Time", interactive=False)
+                        video_rek_time = gr.Textbox(label="Rekognition Processing Time", interactive=False)
+
                     video_submit_button = gr.Button("Process Video")
 
                     def update_component_visibility(method):
@@ -300,6 +317,9 @@ with gr.Blocks() as demo:
                             gr.update(value=""),  # clear processing result
                             gr.update(value=""),  # clear video analysis
                             gr.update(visible=is_frame_based),  # frame based components
+                            gr.update(value=""),  # clear rekognition output
+                            gr.update(value=""),  # clear llm time
+                            gr.update(value=""),  # clear rek time
                         ]
                     
                     def update_video_source_ui(source):
@@ -323,8 +343,9 @@ with gr.Blocks() as demo:
                     analysis_method.change(
                         fn=update_component_visibility,
                         inputs=[analysis_method],
-                        outputs=[num_frames_input, direct_video_model, model_dropdown, 
-                                video_result, video_analysis, frame_based_components]
+                        outputs=[num_frames_input, direct_video_model, model_dropdown,
+                                video_result, video_analysis, frame_based_components,
+                                rekognition_video_output, video_llm_time, video_rek_time]
                     )
                     
                     video_source.change(
@@ -449,73 +470,89 @@ with gr.Blocks() as demo:
             demo.load(capture_status_update, inputs=None, outputs=[capture_status_text])
 
             def process_image_wrapper(image, prompt, model):
-                # Process the image and get results
-                llm_res, moderation_result, labels_result, faces_result = process_image(image, prompt, model)
-                # Return the original image along with results
-                return image, llm_res, moderation_result, labels_result, faces_result
+                llm_res, moderation_result, labels_result, faces_result, llm_elapsed, rek_elapsed = process_image(image, prompt, model)
+                return (image, llm_res, moderation_result, labels_result, faces_result,
+                        f"{llm_elapsed:.2f}s", f"{rek_elapsed:.2f}s")
 
             submit_button.click(
                 fn=process_image_wrapper,
                 inputs=[image_input, image_prompt_input, model_dropdown],
-                outputs=[image_input, llm_output, 
-                         rekognition_moderation_output, 
-                         rekognition_labels_output, 
-                         rekognition_faces_output]
+                outputs=[image_input, llm_output,
+                         rekognition_moderation_output,
+                         rekognition_labels_output,
+                         rekognition_faces_output,
+                         image_llm_time, image_rek_time]
             )
 
             def process_video_wrapper(video, s3_path, num_frames, prompt, general_model, nova_model, method, source):
                 try:
-                    # Use appropriate model based on the selected method
                     selected_model = nova_model if method == "Understand Video Directly" else general_model
                     analysis_method = "direct" if method == "Understand Video Directly" else "frame"
-                    
-                    # Handle video path based on input type
+
                     video_path = None
                     is_s3_path = False
-                    
+
                     if source == "S3 Path":
-                        # Use S3 path, force direct method
                         video_path = s3_path
                         is_s3_path = True
                         analysis_method = "direct"
                         selected_model = nova_model
                         logging.info(f"Using S3 path: {video_path}")
                     elif isinstance(video, str):
-                        # Example video or already a path
                         video_path = video
                     elif video is not None:
-                        # Uploaded video through Gradio UI
                         video_path = video.name if hasattr(video, 'name') else None
-                    
+
                     if video_path is None:
-                        return None, "No video file provided", None
-                    
-                    # Check file size (only for local files)
+                        return None, "No video file provided", None, "", "", ""
+
                     if not is_s3_path and analysis_method == "direct":
                         file_size = os.path.getsize(video_path)
-                        max_size = 25 * 1024 * 1024  # 25 MB limit for direct understanding
+                        max_size = 25 * 1024 * 1024
                         logging.info(f"Video file size: {file_size / (1024 * 1024):.2f} MB")
-                        
                         if file_size > max_size:
                             error_msg = f"Video file size ({file_size / (1024 * 1024):.2f} MB) exceeds the maximum allowed size (25 MB) for direct video understanding. Please use a smaller video file or try the frame-based analysis method."
                             logging.error(error_msg)
-                            return None, error_msg, None
-                    
-                    frames, result_msg, analysis = process_video(video_path, num_frames, prompt, selected_model, analysis_method, is_s3_path)
-                    
-                    # For direct understanding, don't update the video output gallery
+                            return None, error_msg, None, "", "", ""
+
+                    def timed_llm():
+                        start = time.time()
+                        result = process_video(video_path, num_frames, prompt, selected_model, analysis_method, is_s3_path)
+                        return result, time.time() - start
+
+                    def timed_rek():
+                        start = time.time()
+                        result = run_video_moderation(video_path, is_s3_path)
+                        return result, time.time() - start
+
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                        llm_future = executor.submit(timed_llm)
+                        rek_future = executor.submit(timed_rek)
+
+                        (frames, result_msg, analysis), llm_elapsed = llm_future.result()
+
+                        try:
+                            rekognition_result, rek_elapsed = rek_future.result()
+                        except Exception as e:
+                            logging.error(f"Rekognition video moderation error: {e}")
+                            rekognition_result = f"=== Rekognition Video Content Moderation ===\nError: {e}"
+                            rek_elapsed = 0.0
+
+                    llm_time_str = f"{llm_elapsed:.2f}s"
+                    rek_time_str = f"{rek_elapsed:.2f}s"
+
                     if analysis_method == "direct":
-                        return None, result_msg, analysis
-                    return frames, result_msg, analysis
-                    
+                        return None, result_msg, analysis, rekognition_result, llm_time_str, rek_time_str
+                    return frames, result_msg, analysis, rekognition_result, llm_time_str, rek_time_str
+
                 except Exception as e:
                     logging.error(f"Error in process_video_wrapper: {str(e)}")
-                    return None, f"Error processing video: {str(e)}", None
+                    return None, f"Error processing video: {str(e)}", None, "", "", ""
 
             video_submit_button.click(
                 fn=process_video_wrapper,
                 inputs=[video_input, s3_path_input, num_frames_input, video_prompt_input, model_dropdown, direct_video_model, analysis_method, video_source],
-                outputs=[video_output, video_result, video_analysis]
+                outputs=[video_output, video_result, video_analysis, rekognition_video_output, video_llm_time, video_rek_time]
             )
 
             text_submit_button.click(

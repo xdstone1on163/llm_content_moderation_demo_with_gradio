@@ -44,11 +44,19 @@ def rekognition_detect_faces_result(image):
     return "Detected Faces:\n" + "\n".join(result)
 
 def process_image(image, system_prompt, model_id):
+    import time
+
+    llm_start = time.time()
     llm_res = llm_result(image, system_prompt, model_id)
+    llm_elapsed = time.time() - llm_start
+
+    rek_start = time.time()
     moderation_result = rekognition_detect_moderation_labels_result(image)
     labels_result = rekognition_detect_labels_result(image)
     faces_result = rekognition_detect_faces_result(image)
-    return llm_res, moderation_result, labels_result, faces_result
+    rek_elapsed = time.time() - rek_start
+
+    return llm_res, moderation_result, labels_result, faces_result, llm_elapsed, rek_elapsed
 
 def llm_result(image, system_prompt, model_id):
     """Audit image using the selected model"""

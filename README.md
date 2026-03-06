@@ -6,14 +6,16 @@ This is a multimedia content moderation and transcription system demo based on A
 
 1. **Image Moderation**
    - Uses large language models and Amazon Rekognition to detect inappropriate content in images
+   - Processing time tracking for both LLM and Rekognition to compare speed and efficiency
    - Supports identification of violence, adult content, offensive images, etc.
 
 2. **Video Moderation**
    - Supports two analysis methods:
      * Frame-based analysis: Extracts and analyzes key frames using large language models
      * Direct video understanding: Uses AWS Bedrock Nova models to analyze entire videos without frame extraction
+   - **AWS Rekognition Video Content Moderation**: Runs in parallel with LLM analysis for side-by-side comparison
+   - Processing time tracking for both LLM and Rekognition to compare speed and efficiency
    - Provides detailed content risk assessment and insights
-   - Allows comparison between frame-based and direct analysis approaches
 
 3. **Video Stream Moderation**
    - Uses camera to capture real-time video stream
@@ -45,7 +47,7 @@ This is a multimedia content moderation and transcription system demo based on A
 - Python 3.8+
 - AWS SDK (boto3)
 - Gradio (Web interface)
-- Amazon Rekognition
+- Amazon Rekognition (Image + Video Content Moderation)
 - Amazon Transcribe
 - Amazon Comprehend
 
