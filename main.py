@@ -4,50 +4,25 @@ from video_audit import process_video, analyze_video_content
 from text_audit import process_text
 from audio_audit import create_audio_interface
 from config import DEFAULT_SYSTEM_PROMPT, DEFAULT_IMAGE_PROMPT, DEFAULT_VIDEO_PROMPT, DEFAULT_TEXT_PROMPT, DEFAULT_VIDEO_FRAME_PROMPT, DEFAULT_TEXT_TO_AUDIT, MODEL_LIST, MODEL_PRICES
-import cv2
 import threading
 import time
 import os
-import glob
 import queue
-import shutil
 import logging
 from PIL import Image
 from video_stream import (
-    start_frame_capture, stop_frame_capture, get_latest_captured_frame_path,
-    live_logs_as_html, log_queue
+    process_streaming_frame, get_captured_frames, clear_captured_frames,
+    reset_frame_count, get_frame_count
 )
 
-# Global variables for video capture
-capture_interval = 1  # Capture a frame every 1 second
-is_running = False
+# Global variables for video stream analysis
 is_analyzing = False
-capture_thread = None
 analysis_thread = None
-latest_captured_frame_path = None
 analysis_output = ""
-stop_capture_flag = None  # Global flag to control frame capture
+log_queue = queue.Queue()
 log_history = []  # Store recent logs
 
-# Ensure the directory for storing frames exists
-FRAME_STORAGE_DIR = os.path.join(os.getcwd(), 'captured_images')
-os.makedirs(FRAME_STORAGE_DIR, exist_ok=True)
-
-def get_captured_frames():
-    """
-    Get a list of all captured frames, sorted by timestamp (newest first)
-    """
-    frames = []
-    try:
-        # Get all jpg files in the directory
-        files = glob.glob(os.path.join(FRAME_STORAGE_DIR, "frame_*.jpg"))
-        # Sort files by modification time (newest first)
-        frames = sorted(files, key=lambda x: os.path.getmtime(x), reverse=True)
-    except Exception as e:
-        print(f"Error getting captured frames: {e}")
-    return frames
-
-def analyze_frames_continuous(num_frames, analysis_prompt, capture_rate, analysis_frequency, model_id):
+def analyze_frames_continuous(num_frames, analysis_prompt, analysis_frequency, model_id):
     global is_analyzing, analysis_output
     while is_analyzing:
         try:
@@ -74,19 +49,19 @@ def analyze_frames_continuous(num_frames, analysis_prompt, capture_rate, analysi
             log_queue.put(error_message)
             time.sleep(analysis_frequency)
 
-def start_analysis(num_frames, analysis_prompt, capture_rate, analysis_frequency, model_id):
+def start_analysis(num_frames, analysis_prompt, analysis_frequency, model_id):
     global analysis_thread, is_analyzing, analysis_output
     is_analyzing = True
     analysis_output = ""
 
     def run_analysis():
-        analyze_frames_continuous(num_frames, analysis_prompt, capture_rate, analysis_frequency, model_id)
+        analyze_frames_continuous(num_frames, analysis_prompt, analysis_frequency, model_id)
 
     analysis_thread = threading.Thread(target=run_analysis)
     analysis_thread.daemon = True
     analysis_thread.start()
     log_queue.put("Analysis started...")
-    return gr.update(value="Analysis started"), gr.update(value="Stop Analysis"), gr.update(value="Start Capturing"), gr.update(value="Stop Capturing")
+    return gr.update(value="Analysis started"), gr.update(value="Stop Analysis")
 
 def stop_analysis():
     global is_analyzing, analysis_thread
@@ -95,7 +70,7 @@ def stop_analysis():
         analysis_thread.join()
         analysis_thread = None
     log_queue.put("Analysis stopped")
-    return gr.update(value="Start Analysis"), gr.update(value="Analysis stopped"), gr.update(value="Start Capturing"), gr.update(value="Stop Capturing")
+    return gr.update(value="Start Analysis"), gr.update(value="Analysis stopped")
 
 def update_log_display():
     global log_history
@@ -133,10 +108,22 @@ def update_log_display():
         """)
     return gr.update()
 
+def capture_status_text_value():
+    """Return current capture status string."""
+    count = get_frame_count()
+    if count > 0:
+        return f"{count} frame(s) saved"
+    return "Waiting for Record..."
+
 def continuous_update():
     while True:
-        time.sleep(1)  # Update every second
+        time.sleep(1)
         yield update_log_display()
+
+def capture_status_update():
+    while True:
+        time.sleep(1)
+        yield capture_status_text_value()
 
 def get_example_files(directory):
     """Get list of files from examples directory"""
@@ -348,27 +335,28 @@ with gr.Blocks() as demo:
 
                 # Video stream audit tab
                 with gr.TabItem("Video Stream Audit"):
-                    gr.Markdown("Use camera to capture video stream")
-                    video_stream_output = gr.Image(label="Capture video stream from camera", sources=["webcam"])
-                    
+                    gr.Markdown("Use camera to capture video stream. **Click the Record button on the camera to start streaming.**")
+                    webcam_input = gr.Image(sources="webcam", streaming=True, label="Camera Feed")
+
                     with gr.Row():
-                        capture_rate_input = gr.Slider(minimum=1, maximum=10, step=1, value=1, label="Frame capture rate (seconds)")
-                        start_capture_button = gr.Button("Start Capturing")
-                    
+                        refresh_frames_btn = gr.Button("Refresh Frames")
+                        clear_frames_btn = gr.Button("Clear Frames")
+
+                    capture_status_text = gr.Textbox(label="Capture Status", value="Waiting for Record...", interactive=False)
+                    capture_rate_input = gr.Slider(minimum=1, maximum=10, step=1, value=1, label="Frame capture rate (seconds)")
                     frames_to_analyze = gr.Slider(minimum=1, maximum=10, step=1, value=3, label="Number of frames to analyze each time", interactive=True)
                     analysis_prompt_input = gr.Textbox(label="Analysis prompt", value=DEFAULT_VIDEO_FRAME_PROMPT, lines=2)
                     analysis_frequency = gr.Slider(minimum=1, maximum=10, step=1, value=5, label="Analysis frequency (seconds)", interactive=True)
-                    
+
                     start_analysis_button = gr.Button("Start Analysis")
                     stop_analysis_button = gr.Button("Stop Analysis")
-                    stop_capture_button = gr.Button("Stop Capturing")
 
                     gr.Markdown("Analysis Status")
                     current_status_html = gr.HTML(value="<div style='height:300px; overflow-y:auto; font-family:monospace; white-space:pre-wrap;'>No logs yet...</div>")
+                    clear_analysis_btn = gr.Button("Clear Analysis Results")
 
                     gr.Markdown("Captured Frames")
                     captured_frames_gallery = gr.Gallery(label="Captured Frames", columns=5, height="auto")
-                    captured_frames_output = gr.Textbox(label="Save path for captured frames")
 
                 # Text audit tab
                 with gr.TabItem("Text Audit"):
@@ -396,71 +384,69 @@ with gr.Blocks() as demo:
                     # Create the audio interface
                     audio_interface = create_audio_interface(example_audios)
 
-            def start_capture(capture_rate):
-                global stop_capture_flag, capture_thread
-                
-                # Clear the captured frames directory
-                if os.path.exists(FRAME_STORAGE_DIR):
-                    shutil.rmtree(FRAME_STORAGE_DIR)
-                os.makedirs(FRAME_STORAGE_DIR)
-                
-                log_queue.put("Frame capture started...")
-                stop_capture_flag = threading.Event()
-                capture_thread = start_frame_capture(stop_capture_flag)
-                return (
-                    gr.update(value="Capture started"),
-                    gr.update(value="Start Analysis"),
-                    gr.update(value="Stop Analysis"),
-                    gr.update(value="Stop Capturing"),
-                    gr.update(value=os.path.abspath(FRAME_STORAGE_DIR))
-                )
+            def on_stream_frame(frame, capture_rate):
+                return process_streaming_frame(frame, capture_rate)
 
-            def stop_capture():
-                global capture_thread, stop_capture_flag
-                if stop_capture_flag is not None:
-                    stop_frame_capture(capture_thread, stop_capture_flag)
-                    captured_frames = get_captured_frames()
-                    capture_thread = None
-                    stop_capture_flag = None
-                    log_queue.put("Frame capture stopped")
-                    return (
-                        gr.update(value="Start Capturing"),
-                        gr.update(value="Start Analysis"),
-                        gr.update(value="Stop Analysis"),
-                        gr.update(value="Capture stopped"),
-                        gr.update(value=captured_frames)
-                    )
-                return (
-                    gr.update(value="Start Capturing"),
-                    gr.update(value="Start Analysis"),
-                    gr.update(value="Stop Analysis"),
-                    gr.update(value="Not capturing frames"),
-                    gr.update(value=[])
-                )
-
-            start_capture_button.click(
-                fn=start_capture,
-                inputs=[capture_rate_input],
-                outputs=[start_capture_button, start_analysis_button, stop_analysis_button, stop_capture_button, captured_frames_output]
+            webcam_input.stream(
+                on_stream_frame,
+                [webcam_input, capture_rate_input],
+                webcam_input,
+                time_limit=3600,
+                stream_every=0.5,
+                concurrency_limit=30,
             )
+
+            def on_refresh_frames():
+                return gr.update(value=get_captured_frames())
+
+            refresh_frames_btn.click(
+                fn=on_refresh_frames,
+                inputs=[],
+                outputs=[captured_frames_gallery]
+            )
+
+            def on_clear_frames():
+                reset_frame_count()
+                clear_captured_frames()
+                return gr.update(value=[])
+
+            clear_frames_btn.click(
+                fn=on_clear_frames,
+                inputs=[],
+                outputs=[captured_frames_gallery]
+            )
+
+            def on_clear_analysis():
+                global log_history, analysis_output
+                log_history = []
+                analysis_output = ""
+                while not log_queue.empty():
+                    try:
+                        log_queue.get_nowait()
+                    except queue.Empty:
+                        break
+                return gr.update(value="<div style='height:300px; overflow-y:auto; font-family:monospace; white-space:pre-wrap;'>No logs yet...</div>")
+
+            clear_analysis_btn.click(
+                fn=on_clear_analysis,
+                inputs=[],
+                outputs=[current_status_html]
+            )
+
             start_analysis_button.click(
                 fn=start_analysis,
-                inputs=[frames_to_analyze, analysis_prompt_input, capture_rate_input, analysis_frequency, model_dropdown],
-                outputs=[start_analysis_button, stop_analysis_button, start_capture_button, stop_capture_button]
+                inputs=[frames_to_analyze, analysis_prompt_input, analysis_frequency, model_dropdown],
+                outputs=[start_analysis_button, stop_analysis_button]
             )
             stop_analysis_button.click(
                 fn=stop_analysis,
                 inputs=[],
-                outputs=[start_analysis_button, stop_analysis_button, start_capture_button, stop_capture_button]
-            )
-            stop_capture_button.click(
-                fn=stop_capture,
-                inputs=[],
-                outputs=[start_capture_button, start_analysis_button, stop_analysis_button, stop_capture_button, captured_frames_gallery]
+                outputs=[start_analysis_button, stop_analysis_button]
             )
 
             # Continuous updates
             demo.load(continuous_update, inputs=None, outputs=[current_status_html])
+            demo.load(capture_status_update, inputs=None, outputs=[capture_status_text])
 
             def process_image_wrapper(image, prompt, model):
                 # Process the image and get results
@@ -541,5 +527,5 @@ with gr.Blocks() as demo:
                          toxic_content_output]
             )
 
-demo.queue()
+demo.queue(default_concurrency_limit=5)
 demo.launch(share=True)
