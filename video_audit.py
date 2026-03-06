@@ -78,10 +78,6 @@ def analyze_video_content(frames, prompt, model_id):
         {
             "role": "user",
             "content": content
-        },
-        {
-            "role": "assistant",
-            "content": [{"text": "```json"}]
         }
     ]
     
@@ -95,8 +91,7 @@ def analyze_video_content(frames, prompt, model_id):
             system_prompts=system_prompts,
             messages=messages,
             max_tokens=2000,
-            temperature=0.3,
-            top_p=0.9
+            temperature=0.3
         )
     except Exception as e:
         logging.error(f"Video analysis error: {str(e)}")

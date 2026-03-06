@@ -19,17 +19,16 @@ def invoke_model(body, contentType, accept, modelId):
     )
     return response
 
-def converse_with_model(model_id, system_prompts, messages, max_tokens=2000, temperature=0.3, top_p=0.9):
+def converse_with_model(model_id, system_prompts, messages, max_tokens=2000, temperature=0.3):
     """
     Start or continue a conversation using Bedrock's Converse API
-    
+
     Args:
         model_id (str): The model ID to use
         system_prompts (list): List of system prompts
         messages (list): List of message dictionaries with role and content
         max_tokens (int): Maximum number of tokens in response
         temperature (float): Temperature for response generation
-        top_p (float): Top P for response generation
     
     Returns:
         str: Model's response text
@@ -42,14 +41,15 @@ def converse_with_model(model_id, system_prompts, messages, max_tokens=2000, tem
             inferenceConfig={
                 "temperature": temperature,
                 "maxTokens": max_tokens,
-                "topP": top_p,
-                "stopSequences": ["```"], # stop sequences here
             }
         )
         
-        result = response['output']['message']['content'][0]['text']
-        result = result.rstrip("`")
+        content = response['output']['message']['content']
         print("Using model: "+model_id)
+        if not content:
+            print(f"Model returned empty content. Stop reason: {response.get('stopReason', 'unknown')}")
+            return "Model returned empty response"
+        result = content[0].get('text', '')
         return result
     except Exception as e:
         print(f"Model invocation error: {str(e)}")

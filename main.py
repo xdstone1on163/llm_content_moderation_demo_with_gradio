@@ -152,7 +152,7 @@ with gr.Blocks() as demo:
         # Left column for model selection and price display
         with gr.Column(scale=1):
             with gr.Group():
-                model_dropdown = gr.Dropdown(choices=MODEL_LIST, value="anthropic.claude-3-5-sonnet-20241022-v2:0", label="Select Model")
+                model_dropdown = gr.Dropdown(choices=MODEL_LIST, value="global.anthropic.claude-sonnet-4-6", label="Select Model")
                 model_price_display = gr.Textbox(value="", interactive=False, label="Model Price")
 
                 def update_model_price(model):
@@ -165,7 +165,7 @@ with gr.Blocks() as demo:
                 model_dropdown.change(fn=update_model_price, inputs=[model_dropdown], outputs=[model_price_display])
                 
                 # Set initial price for the default model
-                default_model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+                default_model = "global.anthropic.claude-sonnet-4-6"
                 demo.load(fn=lambda: update_model_price(default_model), inputs=None, outputs=[model_price_display])
         
         # Vertical line separator
@@ -259,7 +259,7 @@ with gr.Blocks() as demo:
                         )
                         
                     # Add specific model selection for direct video understanding
-                    nova_models = ["us.amazon.nova-lite-v1:0", "us.amazon.nova-pro-v1:0"]  # Nova models that support video
+                    nova_models = ["global.amazon.nova-lite-v1:0", "global.amazon.nova-pro-v1:0", "global.amazon.nova-premier-v1:0", "global.amazon.nova-2-lite-v1:0"]  # Nova models that support video
                     direct_video_model = gr.Dropdown(
                         choices=nova_models,
                         value=nova_models[0],

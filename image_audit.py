@@ -80,7 +80,7 @@ def llm_result(image, system_prompt, model_id):
             "role": "user",
             "content": [
                 {
-                    "text": DEFAULT_IMAGE_PROMPT+",here is my audit result："
+                    "text": DEFAULT_IMAGE_PROMPT
                 },
                 {
                     "image": {
@@ -101,10 +101,9 @@ def llm_result(image, system_prompt, model_id):
             system_prompts=[{"text": system_prompt}] if system_prompt else None,
             messages=messages,
             max_tokens=2000,
-            temperature=0.3,
-            top_p=0.9
+            temperature=0.3
         )
-        
+
         return llm_analysis
         
     except Exception as e:

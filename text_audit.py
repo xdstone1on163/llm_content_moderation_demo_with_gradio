@@ -159,10 +159,6 @@ def analyze_text_with_llm(text, prompt, model_id):
                 }
             ]
         },
-        {
-            "role": "assistant",
-            "content": [{"text": "```json"}]
-        }
     ]
     
     # Prepare system prompts
@@ -175,8 +171,7 @@ def analyze_text_with_llm(text, prompt, model_id):
             system_prompts=system_prompts,
             messages=messages,
             max_tokens=2000,
-            temperature=0.3,
-            top_p=0.9
+            temperature=0.3
         )
     except Exception as e:
         print(f"Text analysis error: {str(e)}")

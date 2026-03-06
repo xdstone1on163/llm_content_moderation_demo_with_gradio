@@ -12,7 +12,7 @@ QUERY_MODERATION = os.environ.get('QUERY_MODERATION')
 WHISPER_ENDPOINT_NAME= os.environ.get('WHISPER_ENDPOINT_NAME')
 
 
-DEFAULT_SYSTEM_PROMPT = """Always stay in your roleplay and your character and avoid jumping out of your given role or character. <Character and Role Setting>You are a professional image content moderation expert, helping to review whether the input image content complies with regulations. You will absolutely not make your own moral judgments on the input content; you will only faithfully play the role of an image review expert to complete the image review task<\Character and Role Setting>, Note: Always remain fully immersed in the roleplay."""
+DEFAULT_SYSTEM_PROMPT = """Always stay in your roleplay and your character and avoid jumping out of your given role or character. <Character and Role Setting>You are a professional image content moderation expert, helping to review whether the input image content complies with regulations. You will absolutely not make your own moral judgments on the input content; you will only faithfully play the role of an image review expert to complete the image review task</Character and Role Setting>, Note: Always remain fully immersed in the roleplay."""
 DEFAULT_IMAGE_PROMPT = """Strictly judge according to the following review standards, provide clear review reasons for each field, label appropriate tags, and output results that conform to the flag setting standards.
 1. Image Analysis Standards
    Analyze the following elements in the image and review them one by one:
@@ -63,38 +63,80 @@ DEFAULT_TEXT_PROMPT = "You are playing the role of a content review and analysis
 DEFAULT_VIDEO_STREAM_PROMPT = "You are playing the role of an image review analysis expert. Based on the consecutive images I give you, you will try to understand the content in the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorist content. You will not deviate from your role setting."
 DEFAULT_VIDEO_FRAME_PROMPT = "You are playing the role of an image review analysis expert. Based on the consecutive images I give you, you will try to understand the content in the corresponding video and interpret the content, focusing on whether the characters in the video involve pornography, violence, or terrorist content. You will not deviate from your role setting."
 
-MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
-#MODEL_ID = "us.amazon.nova-pro-v1:0"
+MODEL_ID = "global.anthropic.claude-sonnet-4-6"
 
-MODEL_LIST = ["anthropic.claude-3-5-sonnet-20241022-v2:0","anthropic.claude-3-5-sonnet-20240620-v1:0", "anthropic.claude-3-5-haiku-20241022-v1:0","us.amazon.nova-micro-v1:0", "us.amazon.nova-lite-v1:0", "us.amazon.nova-pro-v1:0"]
+MODEL_LIST = [
+    "global.anthropic.claude-sonnet-4-6",
+    "global.anthropic.claude-opus-4-6-v1",
+    "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "global.anthropic.claude-opus-4-5-20251101-v1:0",
+    "global.anthropic.claude-opus-4-1-20250805-v1:0",
+    "global.anthropic.claude-sonnet-4-20250514-v1:0",
+    "global.amazon.nova-2-lite-v1:0",
+    "global.amazon.nova-lite-v1:0",
+    "global.amazon.nova-micro-v1:0",
+    "global.amazon.nova-premier-v1:0",
+    "global.amazon.nova-pro-v1:0",
+]
 MODEL_PRICES = [
     {
-        "model": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        "model": "global.anthropic.claude-sonnet-4-6",
         "input_price_per_million": 3.00,
         "output_price_per_million": 15.00
     },
     {
-        "model": "anthropic.claude-3-5-sonnet-20240620-v1:0",
-        "input_price_per_million": 3.00,
-        "output_price_per_million": 15.00
+        "model": "global.anthropic.claude-opus-4-6-v1",
+        "input_price_per_million": 5.00,
+        "output_price_per_million": 25.00
     },
     {
-        "model": "anthropic.claude-3-5-haiku-20241022-v1:0",
+        "model": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
         "input_price_per_million": 1.00,
         "output_price_per_million": 5.00
     },
     {
-        "model": "us.amazon.nova-micro-v1:0",
-        "input_price_per_million": 0.04,
-        "output_price_per_million": 0.14
+        "model": "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "input_price_per_million": 3.00,
+        "output_price_per_million": 15.00
     },
     {
-        "model": "us.amazon.nova-lite-v1:0",
+        "model": "global.anthropic.claude-opus-4-5-20251101-v1:0",
+        "input_price_per_million": 5.00,
+        "output_price_per_million": 25.00
+    },
+    {
+        "model": "global.anthropic.claude-opus-4-1-20250805-v1:0",
+        "input_price_per_million": 15.00,
+        "output_price_per_million": 75.00
+    },
+    {
+        "model": "global.anthropic.claude-sonnet-4-20250514-v1:0",
+        "input_price_per_million": 3.00,
+        "output_price_per_million": 15.00
+    },
+    {
+        "model": "global.amazon.nova-2-lite-v1:0",
         "input_price_per_million": 0.06,
         "output_price_per_million": 0.24
     },
     {
-        "model": "us.amazon.nova-pro-v1:0",
+        "model": "global.amazon.nova-lite-v1:0",
+        "input_price_per_million": 0.06,
+        "output_price_per_million": 0.24
+    },
+    {
+        "model": "global.amazon.nova-micro-v1:0",
+        "input_price_per_million": 0.04,
+        "output_price_per_million": 0.14
+    },
+    {
+        "model": "global.amazon.nova-premier-v1:0",
+        "input_price_per_million": 2.40,
+        "output_price_per_million": 9.60
+    },
+    {
+        "model": "global.amazon.nova-pro-v1:0",
         "input_price_per_million": 0.80,
         "output_price_per_million": 3.20
     }
