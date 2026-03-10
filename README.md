@@ -42,6 +42,47 @@ This is a multimedia content moderation and transcription system demo based on A
    - Output: `results.json`, `summary.txt`, `results.xlsx` (4 sheets with color-coded severity)
    - CLI: `python automated_execution_without_UI/main.py -m <model_id> [--text-only|--image-only|--video-only]`
 
+## Supported Models and Pricing
+
+All models are available via AWS Bedrock on-demand pricing (us-west-2, standard tier, per 1M tokens).
+
+### Text + Image + Video (Direct Video Understanding)
+
+| Model | Model ID | Input $/1M | Output $/1M | Provider |
+|-------|----------|----------:|------------:|----------|
+| Nova 2 Lite | `us.amazon.nova-2-lite-v1:0` | $0.33 | $2.75 | Amazon |
+| Nova Lite | `us.amazon.nova-lite-v1:0` | $0.06 | $0.24 | Amazon |
+| Nova Pro | `us.amazon.nova-pro-v1:0` | $0.80 | $3.20 | Amazon |
+| Nova Premier | `us.amazon.nova-premier-v1:0` | $2.50 | $12.50 | Amazon |
+
+### Text + Image (Video via Frame Extraction)
+
+| Model | Model ID | Input $/1M | Output $/1M | Provider | API |
+|-------|----------|----------:|------------:|----------|-----|
+| Claude Haiku 4.5 | `global.anthropic.claude-haiku-4-5-20251001-v1:0` | $1.00 | $5.00 | Anthropic | Converse |
+| Claude Sonnet 4 | `global.anthropic.claude-sonnet-4-20250514-v1:0` | $3.00 | $15.00 | Anthropic | Converse |
+| Claude Sonnet 4.5 | `global.anthropic.claude-sonnet-4-5-20250929-v1:0` | $3.00 | $15.00 | Anthropic | Converse |
+| Claude Sonnet 4.6 | `global.anthropic.claude-sonnet-4-6` | $3.00 | $15.00 | Anthropic | Converse |
+| Claude Opus 4.5 | `global.anthropic.claude-opus-4-5-20251101-v1:0` | $5.00 | $25.00 | Anthropic | Converse |
+| Claude Opus 4.6 | `global.anthropic.claude-opus-4-6-v1` | $5.00 | $25.00 | Anthropic | Converse |
+| Claude Opus 4.1 | `global.anthropic.claude-opus-4-1-20250805-v1:0` | $15.00 | $75.00 | Anthropic | Converse |
+| Qwen3 VL 235B | `qwen.qwen3-vl-235b-a22b` | $0.53 | $2.66 | Qwen | Converse |
+| Kimi K2.5 | `moonshotai.kimi-k2.5` | $0.60 | $3.00 | Moonshot AI | InvokeModel |
+
+### Text Only
+
+| Model | Model ID | Input $/1M | Output $/1M | Provider |
+|-------|----------|----------:|------------:|----------|
+| Nova Micro | `us.amazon.nova-micro-v1:0` | $0.035 | $0.14 | Amazon |
+| GLM 4.7 Flash | `zai.glm-4.7-flash` | $0.07 | $0.40 | Z.AI |
+| Qwen3 Next 80B | `qwen.qwen3-next-80b-a3b` | $0.14 | $1.20 | Qwen |
+| Kimi K2 Thinking | `moonshot.kimi-k2-thinking` | $0.60 | $2.50 | Moonshot AI |
+| GLM 4.7 | `zai.glm-4.7` | $0.60 | $2.20 | Z.AI |
+| DeepSeek V3.2 | `deepseek.v3.2` | $0.62 | $1.85 | DeepSeek |
+| DeepSeek R1 | `deepseek-llm-r1` | $0.62 | $1.85 | DeepSeek |
+
+> Note: Global (`global.*`) and US (`us.*`) profiles for the same model share the same pricing. Prices sourced from AWS Pricing API (us-west-2, standard tier, March 2026).
+
 ## Interface Screenshots
 **Image Moderation Interface:**
 <img width="1328" alt="Screenshot 2025-03-01 at 5 21 18 PM" src="https://github.com/user-attachments/assets/77ebe253-00c3-46ac-9ac8-f15644466a81" />

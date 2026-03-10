@@ -37,6 +37,47 @@
    - 输出：`results.json`、`summary.txt`、`results.xlsx`（4个Sheet，严重程度颜色编码）
    - 命令行：`python automated_execution_without_UI/main.py -m <model_id> [--text-only|--image-only|--video-only]`
 
+## 支持的模型及定价
+
+所有模型均通过 AWS Bedrock 按需计费（us-west-2 区域，标准层级，每百万token价格）。
+
+### 文本 + 图片 + 视频（直接视频理解）
+
+| 模型 | Model ID | 输入 $/1M | 输出 $/1M | 供应商 |
+|------|----------|----------:|----------:|--------|
+| Nova 2 Lite | `us.amazon.nova-2-lite-v1:0` | $0.33 | $2.75 | Amazon |
+| Nova Lite | `us.amazon.nova-lite-v1:0` | $0.06 | $0.24 | Amazon |
+| Nova Pro | `us.amazon.nova-pro-v1:0` | $0.80 | $3.20 | Amazon |
+| Nova Premier | `us.amazon.nova-premier-v1:0` | $2.50 | $12.50 | Amazon |
+
+### 文本 + 图片（视频通过抽帧分析）
+
+| 模型 | Model ID | 输入 $/1M | 输出 $/1M | 供应商 | API 方式 |
+|------|----------|----------:|----------:|--------|---------|
+| Claude Haiku 4.5 | `global.anthropic.claude-haiku-4-5-20251001-v1:0` | $1.00 | $5.00 | Anthropic | Converse |
+| Claude Sonnet 4 | `global.anthropic.claude-sonnet-4-20250514-v1:0` | $3.00 | $15.00 | Anthropic | Converse |
+| Claude Sonnet 4.5 | `global.anthropic.claude-sonnet-4-5-20250929-v1:0` | $3.00 | $15.00 | Anthropic | Converse |
+| Claude Sonnet 4.6 | `global.anthropic.claude-sonnet-4-6` | $3.00 | $15.00 | Anthropic | Converse |
+| Claude Opus 4.5 | `global.anthropic.claude-opus-4-5-20251101-v1:0` | $5.00 | $25.00 | Anthropic | Converse |
+| Claude Opus 4.6 | `global.anthropic.claude-opus-4-6-v1` | $5.00 | $25.00 | Anthropic | Converse |
+| Claude Opus 4.1 | `global.anthropic.claude-opus-4-1-20250805-v1:0` | $15.00 | $75.00 | Anthropic | Converse |
+| Qwen3 VL 235B | `qwen.qwen3-vl-235b-a22b` | $0.53 | $2.66 | Qwen | Converse |
+| Kimi K2.5 | `moonshotai.kimi-k2.5` | $0.60 | $3.00 | Moonshot AI | InvokeModel |
+
+### 纯文本
+
+| 模型 | Model ID | 输入 $/1M | 输出 $/1M | 供应商 |
+|------|----------|----------:|----------:|--------|
+| Nova Micro | `us.amazon.nova-micro-v1:0` | $0.035 | $0.14 | Amazon |
+| GLM 4.7 Flash | `zai.glm-4.7-flash` | $0.07 | $0.40 | Z.AI |
+| Qwen3 Next 80B | `qwen.qwen3-next-80b-a3b` | $0.14 | $1.20 | Qwen |
+| Kimi K2 Thinking | `moonshot.kimi-k2-thinking` | $0.60 | $2.50 | Moonshot AI |
+| GLM 4.7 | `zai.glm-4.7` | $0.60 | $2.20 | Z.AI |
+| DeepSeek V3.2 | `deepseek.v3.2` | $0.62 | $1.85 | DeepSeek |
+| DeepSeek R1 | `deepseek-llm-r1` | $0.62 | $1.85 | DeepSeek |
+
+> 注：同一模型的 Global（`global.*`）和 US（`us.*`）profile 价格相同。价格来源：AWS Pricing API（us-west-2，标准层级，2026年3月）。
+
 ## 界面截图
 **图片审核界面：**
 <img width="1189" alt="Screenshot 2024-11-29 at 5 49 41 PM" src="https://github.com/user-attachments/assets/1514699b-93ba-4b80-9e66-6ca83e46a40d">
