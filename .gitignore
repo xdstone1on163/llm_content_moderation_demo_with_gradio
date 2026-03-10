@@ -57,3 +57,11 @@ logging_demo.py
 
 # CDK
 cdk/
+
+# Batch moderation outputs and real test data
+automated_execution_without_UI/test-sets.xlsx
+automated_execution_without_UI/results.json
+automated_execution_without_UI/summary.txt
+automated_execution_without_UI/results.xlsx
+automated_execution_without_UI/results-by-*.xlsx
+automated_execution_without_UI/~$*.xlsx
