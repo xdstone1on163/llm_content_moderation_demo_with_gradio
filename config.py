@@ -69,7 +69,24 @@ REKOGNITION_POLL_TIMEOUT = 300
 
 MODEL_ID = "global.anthropic.claude-sonnet-4-6"
 
-MODEL_LIST = [
+# ---------------------------------------------------------------------------
+# Model list — grouped by capability
+# ---------------------------------------------------------------------------
+
+# Text + Image + Video (direct video understanding)
+_MODELS_TEXT_IMAGE_VIDEO = [
+    "global.amazon.nova-2-lite-v1:0",
+    "global.amazon.nova-lite-v1:0",
+    "global.amazon.nova-premier-v1:0",
+    "global.amazon.nova-pro-v1:0",
+    "us.amazon.nova-2-lite-v1:0",
+    "us.amazon.nova-lite-v1:0",
+    "us.amazon.nova-premier-v1:0",
+    "us.amazon.nova-pro-v1:0",
+]
+
+# Text + Image via Converse API (image understanding, video via frame extraction)
+_MODELS_TEXT_IMAGE = [
     "global.anthropic.claude-sonnet-4-6",
     "global.anthropic.claude-opus-4-6-v1",
     "global.anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -77,71 +94,56 @@ MODEL_LIST = [
     "global.anthropic.claude-opus-4-5-20251101-v1:0",
     "global.anthropic.claude-opus-4-1-20250805-v1:0",
     "global.anthropic.claude-sonnet-4-20250514-v1:0",
-    "global.amazon.nova-2-lite-v1:0",
-    "global.amazon.nova-lite-v1:0",
-    "global.amazon.nova-micro-v1:0",
-    "global.amazon.nova-premier-v1:0",
-    "global.amazon.nova-pro-v1:0",
+    "qwen.qwen3-vl-235b-a22b",
 ]
+
+# Text + Image via InvokeModel API (OpenAI-compatible format, Converse API doesn't support image field)
+_MODELS_TEXT_IMAGE_INVOKE = [
+    "moonshotai.kimi-k2.5",
+]
+
+# Text only
+_MODELS_TEXT_ONLY = [
+    "global.amazon.nova-micro-v1:0",
+    "us.amazon.nova-micro-v1:0",
+    "deepseek.v3.2",
+    "deepseek-llm-r1",
+    "qwen.qwen3-next-80b-a3b",
+    "moonshot.kimi-k2-thinking",
+    "zai.glm-4.7",
+    "zai.glm-4.7-flash",
+]
+
+MODEL_LIST = _MODELS_TEXT_IMAGE_VIDEO + _MODELS_TEXT_IMAGE + _MODELS_TEXT_IMAGE_INVOKE + _MODELS_TEXT_ONLY
+
 MODEL_PRICES = [
-    {
-        "model": "global.anthropic.claude-sonnet-4-6",
-        "input_price_per_million": 3.00,
-        "output_price_per_million": 15.00
-    },
-    {
-        "model": "global.anthropic.claude-opus-4-6-v1",
-        "input_price_per_million": 5.00,
-        "output_price_per_million": 25.00
-    },
-    {
-        "model": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
-        "input_price_per_million": 1.00,
-        "output_price_per_million": 5.00
-    },
-    {
-        "model": "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        "input_price_per_million": 3.00,
-        "output_price_per_million": 15.00
-    },
-    {
-        "model": "global.anthropic.claude-opus-4-5-20251101-v1:0",
-        "input_price_per_million": 5.00,
-        "output_price_per_million": 25.00
-    },
-    {
-        "model": "global.anthropic.claude-opus-4-1-20250805-v1:0",
-        "input_price_per_million": 15.00,
-        "output_price_per_million": 75.00
-    },
-    {
-        "model": "global.anthropic.claude-sonnet-4-20250514-v1:0",
-        "input_price_per_million": 3.00,
-        "output_price_per_million": 15.00
-    },
-    {
-        "model": "global.amazon.nova-2-lite-v1:0",
-        "input_price_per_million": 0.06,
-        "output_price_per_million": 0.24
-    },
-    {
-        "model": "global.amazon.nova-lite-v1:0",
-        "input_price_per_million": 0.06,
-        "output_price_per_million": 0.24
-    },
-    {
-        "model": "global.amazon.nova-micro-v1:0",
-        "input_price_per_million": 0.04,
-        "output_price_per_million": 0.14
-    },
-    {
-        "model": "global.amazon.nova-premier-v1:0",
-        "input_price_per_million": 2.40,
-        "output_price_per_million": 9.60
-    },
-    {
-        "model": "global.amazon.nova-pro-v1:0",
-        "input_price_per_million": 0.80,
-        "output_price_per_million": 3.20
-    }
+    # --- Text + Image + Video (Nova) ---
+    {"model": "global.amazon.nova-2-lite-v1:0",  "input_price_per_million": 0.06, "output_price_per_million": 0.24},
+    {"model": "global.amazon.nova-lite-v1:0",     "input_price_per_million": 0.06, "output_price_per_million": 0.24},
+    {"model": "global.amazon.nova-premier-v1:0",  "input_price_per_million": 2.40, "output_price_per_million": 9.60},
+    {"model": "global.amazon.nova-pro-v1:0",      "input_price_per_million": 0.80, "output_price_per_million": 3.20},
+    {"model": "us.amazon.nova-2-lite-v1:0",       "input_price_per_million": 0.06, "output_price_per_million": 0.24},
+    {"model": "us.amazon.nova-lite-v1:0",          "input_price_per_million": 0.06, "output_price_per_million": 0.24},
+    {"model": "us.amazon.nova-premier-v1:0",       "input_price_per_million": 2.40, "output_price_per_million": 9.60},
+    {"model": "us.amazon.nova-pro-v1:0",           "input_price_per_million": 0.80, "output_price_per_million": 3.20},
+    # --- Text + Image (Claude) ---
+    {"model": "global.anthropic.claude-sonnet-4-6",            "input_price_per_million": 3.00,  "output_price_per_million": 15.00},
+    {"model": "global.anthropic.claude-opus-4-6-v1",           "input_price_per_million": 5.00,  "output_price_per_million": 25.00},
+    {"model": "global.anthropic.claude-haiku-4-5-20251001-v1:0", "input_price_per_million": 1.00, "output_price_per_million": 5.00},
+    {"model": "global.anthropic.claude-sonnet-4-5-20250929-v1:0", "input_price_per_million": 3.00, "output_price_per_million": 15.00},
+    {"model": "global.anthropic.claude-opus-4-5-20251101-v1:0",  "input_price_per_million": 5.00, "output_price_per_million": 25.00},
+    {"model": "global.anthropic.claude-opus-4-1-20250805-v1:0",  "input_price_per_million": 15.00, "output_price_per_million": 75.00},
+    {"model": "global.anthropic.claude-sonnet-4-20250514-v1:0",  "input_price_per_million": 3.00, "output_price_per_million": 15.00},
+    # --- Text + Image (third-party) ---
+    {"model": "qwen.qwen3-vl-235b-a22b",   "input_price_per_million": 0.0, "output_price_per_million": 0.0},
+    # --- Text only ---
+    {"model": "global.amazon.nova-micro-v1:0", "input_price_per_million": 0.04, "output_price_per_million": 0.14},
+    {"model": "us.amazon.nova-micro-v1:0",     "input_price_per_million": 0.04, "output_price_per_million": 0.14},
+    {"model": "deepseek.v3.2",              "input_price_per_million": 0.0, "output_price_per_million": 0.0},
+    {"model": "deepseek-llm-r1",            "input_price_per_million": 0.0, "output_price_per_million": 0.0},
+    {"model": "qwen.qwen3-next-80b-a3b",   "input_price_per_million": 0.0, "output_price_per_million": 0.0},
+    {"model": "moonshotai.kimi-k2.5",       "input_price_per_million": 0.0, "output_price_per_million": 0.0},
+    {"model": "moonshot.kimi-k2-thinking",  "input_price_per_million": 0.0, "output_price_per_million": 0.0},
+    {"model": "zai.glm-4.7",               "input_price_per_million": 0.0, "output_price_per_million": 0.0},
+    {"model": "zai.glm-4.7-flash",         "input_price_per_million": 0.0, "output_price_per_million": 0.0},
 ]

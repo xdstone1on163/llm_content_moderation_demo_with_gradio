@@ -30,6 +30,18 @@ This is a multimedia content moderation and transcription system demo based on A
 5. **Text Moderation**
    - Uses large language models and AWS Comprehend to analyze sensitive or inappropriate content in text
 
+6. **Batch Content Moderation (Headless CLI)**
+   - Located in `automated_execution_without_UI/` — no Gradio UI needed
+   - Reads test cases from Excel (text/image/video) and runs LLM-based moderation via AWS Bedrock
+   - Supports 20+ models: Claude, Nova, DeepSeek, Qwen, Kimi, GLM series
+   - Models grouped by capability: text-only, text+image, text+image+video
+   - Smart routing: Converse API for Claude/Nova, InvokeModel (OpenAI-compatible) for Kimi K2.5
+   - Nova models auto-fallback: direct video understanding fails → frame-based analysis
+   - 5 moderation categories: pornography, violence, tobacco/alcohol, political sensitivity, profanity
+   - Bilingual prompts (Chinese/English) with `--lang zh|en`
+   - Output: `results.json`, `summary.txt`, `results.xlsx` (4 sheets with color-coded severity)
+   - CLI: `python automated_execution_without_UI/main.py -m <model_id> [--text-only|--image-only|--video-only]`
+
 ## Interface Screenshots
 **Image Moderation Interface:**
 <img width="1328" alt="Screenshot 2025-03-01 at 5 21 18 PM" src="https://github.com/user-attachments/assets/77ebe253-00c3-46ac-9ac8-f15644466a81" />

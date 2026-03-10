@@ -25,6 +25,18 @@
 5. **文本审核**
    - 使用大语言模型和AWS Comprehend分析文本中的敏感或不适当内容
 
+6. **批量内容审核（无UI命令行版）**
+   - 位于 `automated_execution_without_UI/` 目录，无需Gradio界面
+   - 从Excel读取测试用例（文本/图片/视频），通过AWS Bedrock调用LLM进行内容审核
+   - 支持20+模型：Claude、Nova、DeepSeek、Qwen、Kimi、GLM系列
+   - 按能力分组：纯文本、文本+图片、文本+图片+视频
+   - 智能路由：Claude/Nova用Converse API，Kimi K2.5用InvokeModel（OpenAI兼容格式）
+   - Nova模型自动降级：直接视频理解失败时自动切换为抽帧分析
+   - 5个审核类别：色情、暴力、烟酒、政治敏感、污言秽语
+   - 中英文双语提示词，通过 `--lang zh|en` 切换
+   - 输出：`results.json`、`summary.txt`、`results.xlsx`（4个Sheet，严重程度颜色编码）
+   - 命令行：`python automated_execution_without_UI/main.py -m <model_id> [--text-only|--image-only|--video-only]`
+
 ## 界面截图
 **图片审核界面：**
 <img width="1189" alt="Screenshot 2024-11-29 at 5 49 41 PM" src="https://github.com/user-attachments/assets/1514699b-93ba-4b80-9e66-6ca83e46a40d">
