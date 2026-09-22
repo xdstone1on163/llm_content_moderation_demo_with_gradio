@@ -1,3 +1,5 @@
+
+
 # Multimedia Content Transcription and Moderation System Demo
 
 ## Project Overview
@@ -23,7 +25,7 @@ This is a multimedia content moderation and transcription system demo based on A
    - Performs content moderation and analysis on captured video frames
 
 4. **Audio Transcription and Toxicity Detection**
-   - Uses AWS Transcribe for multilingual audio transcription
+   - Uses AWS Transcribe for multilingual audio transcription (Chinese, English, Japanese, and Korean)
    - Performs toxicity content detection for English audio
    - Identifies potentially harmful voice content
 
